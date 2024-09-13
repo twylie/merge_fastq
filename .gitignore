@@ -1,0 +1,9 @@
+.DS_Store
+__pycache__
+.snakemake
+.mypy_cache
+t/*
+foo/*
+cmd.sh
+TODO
+tested/*
