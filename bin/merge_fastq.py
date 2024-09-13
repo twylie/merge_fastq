@@ -8,9 +8,10 @@
 
 """Merge FASTQ Files
 
-This script will take samplemap information and merge multi-lane FASTQ
-files that were split during GTAC@MGI sequencing. New FASTQ files will
-be created and written to disk, at the sample level.
+This script will take samplemap, QC, and project-specific information
+and merge multi-lane FASTQ files that were split during GTAC@MGI
+sequencing. New FASTQ files will be created and written to disk, at the
+sample level.
 """
 
 # import mergefastq
@@ -18,14 +19,14 @@ import argparse
 import sys
 
 
-def collect_cli_arguments(version: int) -> argparse.Namespace:
+def collect_cli_arguments(version: str) -> argparse.Namespace:
     """Collect the command line arguments."""
     # TODO: Add argparse command line options here...
     return
 
 
 if __name__ == '__main__':
-    VERSION = '0.0.1'
+    VERSION = '0.0.2'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
