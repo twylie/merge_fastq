@@ -214,7 +214,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 
 
 if __name__ == '__main__':
-    VERSION = '0.0.8'
+    VERSION = '0.0.9'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
@@ -222,10 +222,16 @@ if __name__ == '__main__':
             sys.version_info
         )
 
+    # Collect the command line arguments.
+
     args = collect_cli_arguments(version=VERSION)
     populate_target_rp_counts(args=args)
     eval_cli_arguments(args=args)
 
-    mergefastq.RenameSamples(args=args)
+    # Parse the input reagent files and create objects for downstream
+    # interrogation.
+
+    df_rename_samples = mergefastq.RenameSamples(args=args)
+    df_samplemap = mergefastq.Samplemap(args=args)
 
 # __END__
