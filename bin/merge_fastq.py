@@ -14,7 +14,7 @@ sequencing. New FASTQ files will be created and written to disk, at the
 sample level.
 """
 
-# import mergefastq
+import mergefastq  # type: ignore
 import argparse
 import sys
 from pathlib import Path
@@ -214,7 +214,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 
 
 if __name__ == '__main__':
-    VERSION = '0.0.7'
+    VERSION = '0.0.8'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
@@ -226,6 +226,6 @@ if __name__ == '__main__':
     populate_target_rp_counts(args=args)
     eval_cli_arguments(args=args)
 
-    # mergefastq.RenameFile.populate_rename_df(args=args)
+    mergefastq.RenameSamples(args=args)
 
 # __END__
