@@ -134,35 +134,26 @@ def populate_target_rp_counts(args: argparse.Namespace) -> None:
 
     Projects
     --------
-    BVI      : Wylie/Stout maternal virome R01 project.
-    COLOCARE : L. Ding project.
     MIDAS    : Wylie/Fritz MRSA related R01 project.
     PLACENTA : Wylie/Ernst placental inflammation R01 project.
     PTLD     : Dharnidharka PTLD R01 project.
-    SHINE    : Subset of Fritz data.
+    BVI      : (retired)
+    COLOCARE : (retired)
+    SHINE    : (retired)
 
     Raises
     ------
     ValueError : Project tag/name does not have associated minimal
                  target read pair count.
     """
-    # TODO: I need to update the minimal read pair count values for each
-    # project when Kristine provides the actual numbers for the #
-    # projects.
     if not args.target_rp_count:
         match args.project:
-            case 'BVI':
-                args.target_rp_count = 50_000_000
-            case 'COLOCARE':
-                args.target_rp_count = 50_000_000
             case 'MIDAS':
-                args.target_rp_count = 40_000_000
+                args.target_rp_count = 30_000_000
             case 'PLACENTA':
                 args.target_rp_count = 40_000_000
             case 'PTLD':
-                args.target_rp_count = 50_000_000
-            case 'SHINE':
-                args.target_rp_count = 50_000_000
+                args.target_rp_count = 30_000_000
             case _:
                 raise ValueError(
                     ('Project tag/name does not have associated '
@@ -214,7 +205,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 
 
 if __name__ == '__main__':
-    VERSION = '0.0.9'
+    VERSION = '0.0.10'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
