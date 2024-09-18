@@ -19,6 +19,7 @@ class Samplemap:
     def __init__(self: Self, args: argparse.Namespace) -> None:
         """Construct the class."""
         self.args = args
+        self.smaps: dict = dict()
         self.__parse_samplemaps()
         return
 
@@ -139,8 +140,8 @@ class Samplemap:
         16. % >Q30
         17. Avg Q Score
 
-        Example Samplemap Entry
-        -----------------------
+        Example Samplemap Input Entry
+        -----------------------------
         {'% >Q30': 94.0,
          '% Pass Filter Clusters': 67.26,
          'Avg Q Score': 38.81,
@@ -159,8 +160,8 @@ class Samplemap:
          'Total Bases': '22,707,956,820',
          'Total Reads': '75,191,910'}
 
-        Example Dataframe Output
-        ------------------------
+        Example Dataframe Output Entry
+        ------------------------------
         {'esp_id': 'LIB028751-DIL01',
          'fastq': 'LIB028751-DIL01_2235JKLT4_S210_L006_R1_001.fastq.gz',
          'flow_cell_id': '2235JKLT4',
@@ -266,11 +267,22 @@ class Samplemap:
         df_subset['pool_name'] = pool_name_col
         return df_subset
 
-    def __parse_samplemap(self: Self, smap: str, smap_type: str) -> DataFrame:
-        """Parse a Samplemap file and return a dataframe.
+    def __parse_samplemap(self: Self, i: int, smap: str,
+                          smap_type: str) -> None:
+        """Parse a Samplemap file and add to the object instance.
+
+        We will parse a given Samplemap.csv file and convert the
+        information to a uniform, subset of values in dataframe format.
+        The dataframe will be added to a running list of batch
+        dataframes in the object instance. Order will be retained from
+        the order of samplemaps called from the command line interface.
 
         Parameters
         ----------
+        i: int
+            Samplemap "batch" number/order from the command line
+            arguments. Order will be retained.
+
         smap : str
             A path to a Samplemap.csv file.
 
@@ -284,22 +296,28 @@ class Samplemap:
         """
         if smap_type == 'smap_mid_2024_format':
             df_subset = self.__smap_mid_2024_to_df(smap=smap)
+            self.smaps.update({
+                i: {
+                    'samplemap_type': smap_type,
+                    'samplemap_path': str(Path(smap).as_posix()),
+                    'fastq_dir': str(Path(smap).parent),
+                    'df': df_subset,
+                }
+            })
         else:
             raise TypeError(
                 'Unknown samplemap format type encountered.',
                 smap_type
             )
-        return df_subset
+        return
 
     def __parse_samplemaps(self: Self) -> None:
         """Parse all of the input Samplemap files."""
-        smap_dfs: list = list()
-        for smap in self.args.samplemap:
+        for i, smap in enumerate(self.args.samplemap, 1):
             smap_type = self.__type_samplemap_format(smap=smap)
-            df_smap = self.__parse_samplemap(smap=smap, smap_type=smap_type)
-            smap_dfs.append(df_smap)
-            from pprint import pprint
-            pprint(smap_dfs[0].loc[0].to_dict())
+            self.__parse_samplemap(i=i, smap=smap, smap_type=smap_type)
+            # self.__eval_cross_batch_sample_ids()
+            # self.__concatenate_samplemaps()
         return
 
 # __END__
