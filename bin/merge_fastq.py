@@ -6,6 +6,9 @@
 # Created     : Fri Sep 13 15:35:31 CDT 2024
 # Copyright   : Copyright (C) 2024 by T.N. Wylie. All rights reserved.
 
+# TODO: Remove the QC files from the pipeline; we will not be using
+# these metrics, but rather will rely on the FASTQ file raw read counts.
+
 """Merge FASTQ Files
 
 This script will take samplemap, QC, and project-specific information
@@ -146,6 +149,11 @@ def populate_target_rp_counts(args: argparse.Namespace) -> None:
     ValueError : Project tag/name does not have associated minimal
                  target read pair count.
     """
+    # TODO: This whole section might be removed in the future. The
+    # target sequence throughput may change within a batch for a
+    # project, if there are different mixtures of sequence types---e.g.
+    # RNA-Seq, WGS, capture, etc. This is not really tracked in the
+    # Samplemap files.
     if not args.target_rp_count:
         match args.project:
             case 'MIDAS':
@@ -205,7 +213,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 
 
 if __name__ == '__main__':
-    VERSION = '0.0.10'
+    VERSION = '0.0.11'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
