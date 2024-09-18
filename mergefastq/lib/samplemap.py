@@ -159,6 +159,21 @@ class Samplemap:
          'Total Bases': '22,707,956,820',
          'Total Reads': '75,191,910'}
 
+        Example Dataframe Output
+        ------------------------
+        {'esp_id': 'LIB028751-DIL01',
+         'fastq': 'LIB028751-DIL01_2235JKLT4_S210_L006_R1_001.fastq.gz',
+         'flow_cell_id': '2235JKLT4',
+         'index_sequence': 'CCTCTATAGA-GTACTTCCAA',
+         'lane_number': 6,
+         'library_type': 'WGS',
+         'pool_name': nan,
+         'read_number': 1,
+         'sample_name': 'H141_1_3_2',
+         'samplemap_path': '/pwd/Samplemap.csv',
+         'total_bases': 22707956820,
+         'total_reads': 75191910}
+
         Raises
         ------
         ValueError : Read-pair number tag is unknown.
@@ -178,7 +193,7 @@ class Samplemap:
          esp_id_col,
          pool_name_col) = (list() for i in range(12))
 
-        df = pd.read_csv(smap)
+        df = pd.read_csv(smap, thousands=',')
         for i in df.index:
             df_i = df.loc[i]
             fastq = df_i['FASTQ']
@@ -283,7 +298,8 @@ class Samplemap:
             smap_type = self.__type_samplemap_format(smap=smap)
             df_smap = self.__parse_samplemap(smap=smap, smap_type=smap_type)
             smap_dfs.append(df_smap)
-            print(smap_dfs)
+            from pprint import pprint
+            pprint(smap_dfs[0].loc[0].to_dict())
         return
 
 # __END__
