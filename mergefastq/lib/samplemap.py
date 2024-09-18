@@ -177,9 +177,9 @@ class Samplemap:
 
         Raises
         ------
-        ValueError : Read-pair number tag is unknown.
+        ValueError : Read-pair number tag is not R1 or R2.
 
-        ValueError : Dataframe field row lengths not of equal length.
+        ValueError : Read-pair number tag is None.
         """
         (file_name_col,
          flow_cell_id_col,
@@ -208,17 +208,23 @@ class Samplemap:
             total_reads = df_i['Total Reads']
             esp_id = df_i['ESP ID']
             pool_name = df_i['Pool Name']
-            read_num_tag = re.search('_R[12]_', df_i['FASTQ']).group()
-            match read_num_tag:
-                case '_R1_':
-                    read_number = 1
-                case '_R2_':
-                    read_number = 2
-                case _:
-                    raise ValueError(
-                        'Read-pair number tag is unknown.',
-                        read_num_tag
-                    )
+            read_num_tag = re.search('_R[12]_', df_i['FASTQ'])
+            if read_num_tag is not None:
+                match read_num_tag.group():
+                    case '_R1_':
+                        read_number = 1
+                    case '_R2_':
+                        read_number = 2
+                    case _:
+                        raise ValueError(
+                            'Read-pair number tag is not R1 or R2.',
+                            read_num_tag
+                        )
+            else:
+                raise ValueError(
+                    'Read-pair number tag is None.',
+                    read_num_tag
+                )
 
             file_name_col.append(fastq)
             flow_cell_id_col.append(flow_cell_id)
