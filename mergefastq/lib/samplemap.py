@@ -9,18 +9,26 @@
 import argparse
 import pandas as pd  # type: ignore
 from pandas import DataFrame  # type: ignore
+from . rename_samples import RenameSamples  # type: ignore
 from typing_extensions import Self
 from pathlib import Path
 import re
+import hashlib
 
 
 class Samplemap:
 
-    def __init__(self: Self, args: argparse.Namespace) -> None:
+    def __init__(self: Self, args: argparse.Namespace,
+                 rename: RenameSamples) -> None:
         """Construct the class."""
         self.args = args
+        self.rename = rename
         self.smaps: dict = dict()
         self.__parse_samplemaps()
+        # self.__eval_origin_fastq()
+        self.__eval_smap_seq_indexes()
+        # self.__eval_compare_sample_ids()
+        self.__add_rename_ids_to_df()
         return
 
     def __type_samplemap_format(self: Self, smap: str) -> str:
@@ -302,11 +310,19 @@ class Samplemap:
         """
         if smap_type == 'smap_mid_2024_format':
             df_subset = self.__smap_mid_2024_to_df(smap=smap)
+            df_subset['batch_id'] = i
+            fastq_dir = str(Path(smap).parent)
+            fastq_path_col: list = list()
+            for ii in df_subset.index:
+                fastq = df_subset.loc[ii]['fastq']
+                fastq_path = Path(fastq_dir) / Path(fastq)
+                fastq_path_col.append(fastq_path.as_posix())
+            df_subset['fastq_path'] = fastq_path_col
             self.smaps.update({
                 i: {
                     'samplemap_type': smap_type,
                     'samplemap_path': str(Path(smap).as_posix()),
-                    'fastq_dir': str(Path(smap).parent),
+                    'fastq_dir': fastq_dir,
                     'df': df_subset,
                 }
             })
@@ -317,13 +333,190 @@ class Samplemap:
             )
         return
 
+    def __eval_cross_batch_sample_ids(self: Self) -> None:
+        """Evaluate if sample ids cross batches.
+
+        The same sample id may cross multiple Samplemap batches---e.g.
+        if a sample is sequenced again for top-up coverage. If that is
+        the case, we will flag the samples for manual intervention and
+        stop the process of merging FASTQ files.
+
+        Raises
+        ------
+        ValueError : Sample exists across multiple batches.
+        """
+        df = self.df_smaps.copy()
+        dfg = df.groupby('sample_name')
+        sample_ids = set(dfg.groups.keys())
+        for sample_id in sample_ids:
+            df_sample = dfg.get_group(sample_id)
+            batch_set = set(df_sample['batch_id'])
+            batch_count = len(batch_set)
+            if batch_count > 1:
+                raise ValueError(
+                    'Sample exists across multiple batches.',
+                    sample_id,
+                    batch_set
+                )
+        return
+
+    def __concatenate_samplemaps(self: Self) -> None:
+        """Concatenate all of the samplemap dataframes into one."""
+        dfs: list = list()
+        for i in self.smaps:
+            dfs.append(self.smaps[i]['df'])
+        self.df_smaps = pd.concat(dfs).reset_index(drop=True)
+        return
+
     def __parse_samplemaps(self: Self) -> None:
         """Parse all of the input Samplemap files."""
         for i, smap in enumerate(self.args.samplemap, 1):
             smap_type = self.__type_samplemap_format(smap=smap)
             self.__parse_samplemap(i=i, smap=smap, smap_type=smap_type)
-            # self.__eval_cross_batch_sample_ids()
-            # self.__concatenate_samplemaps()
+        self.__concatenate_samplemaps()
+        self.__eval_cross_batch_sample_ids()
+        return
+
+    def __eval_origin_fastq(self: Self) -> None:
+        """Check to see that all origin FASTQ file paths are viable.
+
+        We will evaluate all origin FASTQ file paths to make sure that
+        the source files are on-disk and accessible. This evaluation
+        will pass if either (1) the compressed FASTQ or (2) decompressed
+        FASTQ version is accessible on-disk.
+
+        Raises
+        ------
+        FileNotFoundError : Original FASTQ file is not found.
+        """
+        for batch_i in self.smaps:
+            df = self.smaps[batch_i]['df'].copy()
+            fastq_dir = self.smaps[batch_i]['fastq_dir']
+            for i in df.index:
+                fastq = df.loc[i]['fastq']
+                origin_fastq_gz_path = Path(fastq_dir) / Path(fastq)
+                re_suffix = re.search('.gz$', str(origin_fastq_gz_path))
+                if re_suffix is None:
+                    origin_fastq_gz_path = Path(
+                        str(origin_fastq_gz_path) + '.gz'
+                    )
+                origin_fastq_path = Path(str(origin_fastq_gz_path)[:-3])
+                if (
+                    origin_fastq_path.is_file() is False and
+                    origin_fastq_gz_path.is_file() is False
+                ):
+                    raise FileNotFoundError(
+                        'Original FASTQ file is not found.',
+                        fastq
+                    )
+        return
+
+    def __eval_compare_sample_ids(self: Self) -> None:
+        """Compare sample id sets for Samplemap and RenameSamples classes.
+
+        The set of sample ids from the unified Samplemap class dataframe
+        should all be present in the RenameSamples dataframe. If there
+        are missing sample ids, we will stop processing and alert the
+        end user.
+
+        Raises
+        ------
+        ValueError : Sample ids for Samplemap and RenameSamples classes
+                     do not match.
+        """
+        df_rename = self.rename.copy_df()
+        rename_sample_ids = set(df_rename['samplemap_sample_id'])
+        smap_sample_ids = set(self.df_smaps['sample_name'])
+        if smap_sample_ids != rename_sample_ids:
+            raise ValueError('Sample ids for Samplemap and RenameSamples '
+                             'classes do not match.')
+        return
+
+    def __eval_smap_seq_indexes(self: Self) -> None:
+        """Evaluate Samplemap sample ids to sequence indexes.
+
+        Sample ids to index sequence cardinality should be one-to-one
+        for all samples.
+
+        Raises
+        ------
+        ValueError : Bad sample id to sequence index cardinality.
+        """
+        df = self.df_smaps.copy()
+        dfg = df.groupby('sample_name')
+        for sample_name in dfg.groups:
+            tag_count = len(
+                dfg.get_group(sample_name)['index_sequence'].unique()
+            )
+            if tag_count != 1:
+                raise ValueError(
+                    'Bad sample id to sequence index cardinality.',
+                    sample_name
+                )
+        return
+
+    def __calc_file_md5(self: Self, file_path: str) -> str:
+        """Returns the MD5 hash for a specified file."""
+        with open(file_path, 'rb') as fh:
+            data = fh.read()
+            md5sum = hashlib.md5(data).hexdigest()
+        return md5sum
+
+    def __add_rename_ids_to_df(self: Self) -> None:
+        """Rename Samplemap ids based on RenameSamples ids.
+
+        We will map the revised sample ids taken from the RenameSamples
+        class to the original sample names as found in the unified
+        Samplemap dataframe. These revised names will be used downstream
+        during the FASTQ merging functions--i.e. the final merged FASTQ
+        file names will be taken from the revised sample names.
+
+        Raises
+        ------
+        IndexError : Samplemap samplemap_sample_id is not in the
+                     RenameSamples index.
+
+        ValueError : RenameSamples revised_sample_id is null.
+        """
+        df_smaps = self.df_smaps.copy()
+        df_rename = self.rename.copy_df()
+        dfg = df_rename.groupby('samplemap_sample_id')
+        revised_sample_id_cols: list = list()
+        for i in df_smaps.index:
+            sample_id = df_smaps.loc[i]['sample_name']
+            if sample_id not in dfg.groups.keys():
+                raise IndexError(
+                    'Samplemap samplemap_sample_id is not in the '
+                    'RenameSamples index.',
+                    sample_id
+                )
+            else:
+                dfg_rev_sample_id = dfg.get_group(sample_id)[
+                    'revised_sample_id'
+                ].item()
+                if (
+                    dfg_rev_sample_id == '' or
+                        pd.isna(dfg_rev_sample_id) is True
+                ):
+                    raise ValueError(
+                        'RenameSamples revised_sample_id is null.',
+                        sample_id
+                    )
+                else:
+                    revised_sample_id_cols.append(dfg_rev_sample_id)
+        if len(revised_sample_id_cols) != len(df_smaps['sample_name']):
+            raise ValueError('Samplemap and RenameSamples '
+                             'sample id counts differ.')
+        self.df_smaps['revised_sample_name'] = revised_sample_id_cols
+        return
+
+    def write_df(self: Self, file_path: str) -> None:
+        """Write the unified sample dataframe to a tab-delimited file."""
+        self.df_smaps.to_csv(file_path, sep='\t', index=False)
+        md5 = self.__calc_file_md5(file_path=file_path)
+        md5_path = file_path + '.MD5'
+        with open(md5_path, 'w') as fh:
+            fh.write(f'MD5 ({file_path}) = {md5}\n')
         return
 
 # __END__

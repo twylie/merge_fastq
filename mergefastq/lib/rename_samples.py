@@ -9,6 +9,7 @@
 import argparse
 import pandas as pd  # type: ignore
 from typing_extensions import Self
+from pandas import DataFrame  # type: ignore
 
 
 class RenameSamples:
@@ -82,5 +83,9 @@ class RenameSamples:
             raise ValueError('The revised_sample_id column values '
                              'are not unique.')
         return
+
+    def copy_df(self: Self) -> DataFrame:
+        """Return a copy of the dataframe from the RenameSamples class."""
+        return self.df.copy()
 
 # __END__
