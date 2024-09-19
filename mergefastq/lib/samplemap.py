@@ -479,6 +479,10 @@ class Samplemap:
 
         ValueError : RenameSamples revised_sample_id is null.
         """
+        # TODO: This section is very important in that the old sample
+        # ids and the new sample ids must match correctly. Review the
+        # logic and make sure there can be no mistakes for the renaming
+        # portion of the code.
         df_smaps = self.df_smaps.copy()
         df_rename = self.rename.copy_df()
         dfg = df_rename.groupby('samplemap_sample_id')
