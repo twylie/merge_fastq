@@ -25,9 +25,10 @@ class Samplemap:
         self.rename = rename
         self.smaps: dict = dict()
         self.__parse_samplemaps()
+        # FIXME:
         # self.__eval_origin_fastq()
         self.__eval_smap_seq_indexes()
-        # self.__eval_compare_sample_ids()
+        self.__eval_compare_sample_ids()
         self.__add_rename_ids_to_df()
         return
 
@@ -465,11 +466,11 @@ class Samplemap:
     def __add_rename_ids_to_df(self: Self) -> None:
         """Rename Samplemap ids based on RenameSamples ids.
 
-        We will map the revised sample ids taken from the RenameSamples
-        class to the original sample names as found in the unified
-        Samplemap dataframe. These revised names will be used downstream
-        during the FASTQ merging functions--i.e. the final merged FASTQ
-        file names will be taken from the revised sample names.
+        We will map the revised sample ids taken from RenameSamples to
+        the original sample names as found in the unified Samplemap
+        dataframe. These revised names will be used downstream during
+        the FASTQ merging functions--i.e. the final merged FASTQ file
+        names will be taken from the revised sample names.
 
         Raises
         ------
@@ -518,5 +519,9 @@ class Samplemap:
         with open(md5_path, 'w') as fh:
             fh.write(f'MD5 ({file_path}) = {md5}\n')
         return
+
+    def copy_df(self: Self) -> DataFrame:
+        """Return a copy of the dataframe from the Samplemap class."""
+        return self.df_smaps.copy()
 
 # __END__
