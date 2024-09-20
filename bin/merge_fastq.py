@@ -150,7 +150,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 
 
 if __name__ == '__main__':
-    VERSION = '0.0.22'
+    VERSION = '0.0.23'
 
     if not sys.version_info >= (3, 10):
         raise OSError(

@@ -174,34 +174,44 @@ class MergeFastq:
             r1_copy_cmds: list = list()
             if is_src_r1_fq_gzip is True:
                 r1_copy_cmds.append(f'cp {src_r1_fq} {dest_r1_fq}')
+                r1_copy_cmds.append(
+                    f'md5sum {dest_r1_fq} > {dest_r1_fq}.MD5'
+                )
+                cmd = (f'echo $(zgrep -c ^ {dest_r1_fq} / 4 | bc '
+                       f'> {dest_r1_fq}.counts')
+                r1_copy_cmds.append(cmd)
             else:
-                dest_r1_fq = dest_r1_fq.as_posix()[:-3]
-                r1_copy_cmds.append(f'cp {src_r1_fq} {dest_r1_fq}')
-                r1_copy_cmds.append(f'gzip {dest_r1_fq}')
-            r1_copy_cmds.append(
-                f'md5sum {dest_r1_fq}.gz > {dest_r1_fq}.gz.MD5'
-            )
-            cmd = (f'echo $(zgrep -c ^ {dest_r1_fq}.gz / 4 | bc '
-                   f'> {dest_r1_fq}.gz.counts')
-            r1_copy_cmds.append(cmd)
+                dest_r1_fq_stem = dest_r1_fq.as_posix()[:-3]
+                r1_copy_cmds.append(f'cp {src_r1_fq} {dest_r1_fq_stem}')
+                r1_copy_cmds.append(f'gzip {dest_r1_fq_stem}')
+                r1_copy_cmds.append(
+                    f'md5sum {dest_r1_fq_stem}.gz > {dest_r1_fq_stem}.gz.MD5'
+                )
+                cmd = (f'echo $(zgrep -c ^ {dest_r1_fq_stem}.gz / 4 | bc '
+                       f'> {dest_r1_fq_stem}.gz.counts')
+                r1_copy_cmds.append(cmd)
 
             r2_copy_cmds: list = list()
             if is_src_r2_fq_gzip is True:
                 r2_copy_cmds.append(f'cp {src_r2_fq} {dest_r2_fq}')
+                r2_copy_cmds.append(
+                    f'md5sum {dest_r2_fq} > {dest_r2_fq}.MD5'
+                )
+                cmd = (f'echo $(zgrep -c ^ {dest_r2_fq} / 4 | bc '
+                       f'> {dest_r2_fq}.counts')
+                r2_copy_cmds.append(cmd)
             else:
-                dest_r2_fq = dest_r2_fq.as_posix()[:-3]
-                r2_copy_cmds.append(f'cp {src_r2_fq} {dest_r2_fq}')
-                r2_copy_cmds.append(f'gzip {dest_r2_fq}')
-            r2_copy_cmds.append(
-                f'md5sum {dest_r2_fq}.gz > {dest_r2_fq}.gz.MD5'
-            )
-            cmd = (f'echo $(zgrep -c ^ {dest_r2_fq}.gz / 4 | bc '
-                   f'> {dest_r2_fq}.gz.counts')
-            r2_copy_cmds.append(cmd)
+                dest_r2_fq_stem = dest_r2_fq.as_posix()[:-3]
+                r2_copy_cmds.append(f'cp {src_r2_fq} {dest_r2_fq_stem}')
+                r2_copy_cmds.append(f'gzip {dest_r2_fq_stem}')
+                r2_copy_cmds.append(
+                    f'md5sum {dest_r2_fq_stem}.gz > {dest_r2_fq_stem}.gz.MD5'
+                )
+                cmd = (f'echo $(zgrep -c ^ {dest_r2_fq_stem}.gz / 4 | bc '
+                       f'> {dest_r2_fq_stem}.gz.counts')
+                r2_copy_cmds.append(cmd)
 
-            self.copy_cmds.update({
-                sample_name: zip(r1_copy_cmds, r2_copy_cmds)
-            })
+            self.copy_cmds.update({sample_name: (r1_copy_cmds, r2_copy_cmds)})
         return
 
 # __END__
