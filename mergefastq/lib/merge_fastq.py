@@ -6,6 +6,7 @@
 # Created     : Thu Sep 19 17:01:30 CDT 2024
 # Copyright   : Copyright (C) 2024 by T.N. Wylie. All rights reserved.
 
+import mergefastq  # type: ignore
 import argparse
 import pandas as pd  # type: ignore
 from pandas import DataFrame  # type: ignore
@@ -28,6 +29,8 @@ class MergeFastq:
         self.samplemap = samplemap
         self.copy_cmds: dict = dict()
         self.merge_cmds: dict = dict()
+        self.log_dir_path: str = str()
+        self.sample_dir: dict = dict()
         self.__parse_fastq_copy_types()
         self.__setup_copy_cmds()
         self.__setup_merge_cmds()
@@ -378,6 +381,128 @@ class MergeFastq:
             self.merge_cmds.update({
                 sample_name: (r1_merge_cmds, r2_merge_cmds)
             })
+        return
+
+    def setup_output_dirs(self: Self) -> None:
+        """Setup all of the sample output directories.
+
+        We are setting up the output directory, the bsub log directory,
+        and all of the per-sample write-directories. None of these
+        should exist at this point, so any preexisting directories will
+        throw an exception. We will update the MergeFastq object with
+        the directories that we create.
+
+        Raises
+        ------
+        IsADirectoryError : The outdir directory already exists.
+
+        IsADirectoryError : LSF log dir already exists.
+
+        FileExistsError : File exists.
+        """
+        if Path(self.args.outdir).is_dir() is True:
+            raise IsADirectoryError(
+                'The outdir directory already exists.',
+                self.args.outdir
+            )
+        else:
+            Path(self.args.outdir).mkdir(parents=False, exist_ok=False)
+
+        log_dir = Path(self.args.outdir) / '__bsub'
+        if log_dir.is_dir() is True:
+            raise IsADirectoryError(
+                'LSF log dir already exists.',
+                log_dir
+            )
+        else:
+            log_dir.mkdir(parents=False, exist_ok=False)
+        self.log_dir_path = log_dir
+
+        for sample_name in self.copy_cmds:
+            sample_dir = Path(self.args.outdir) / Path(sample_name)
+            sample_dir.mkdir(parents=False, exist_ok=False)
+            self.sample_dir.update({
+                sample_name: str(sample_dir.resolve())
+            })
+
+        for sample_name in self.merge_cmds:
+            sample_dir = Path(self.args.outdir) / Path(sample_name)
+            sample_dir.mkdir(parents=False, exist_ok=False)
+            self.sample_dir.update({
+                sample_name: str(sample_dir.resolve())
+            })
+        return
+
+    def prepare_lsf_cmds(self: Self) -> None:
+        """Prepare the LSF jobs for merging FASTQ commands."""
+        log_dir = self.log_dir_path
+        lsf_vols: dict = dict()
+        for lsf_vol in self.args.lsf_vol:
+            if lsf_vol.endswith('/') is True:
+                lsf_vols.update({lsf_vol[:-1]: lsf_vol[:-1]})
+            else:
+                lsf_vols.update({lsf_vol: lsf_vol})
+
+        # Single copy commands.
+
+        for i, sample_name in enumerate(self.copy_cmds, 1):
+            r1_cmds, r2_cmds = self.copy_cmds[sample_name]
+            cmds = r1_cmds + r2_cmds
+            error_log = f'{i}_merge_fastq_bsub.err'
+            cmd_name = f'{i}_merge_fastq.sh'
+            out_log = f'{i}_merge_fastq_bsub.out'
+            job_name = f'{i}_merge_fastq'
+            config = f'{i}_merge_fastq_bsub.yaml'
+            bsub_cmd = f'{i}_merge_fastq_bsub.sh'
+            bsub_log_dir = str(log_dir.resolve())
+            copy_lsf_job = mergefastq.Bsub(
+                log_dir=bsub_log_dir,
+                docker_volumes=lsf_vols,
+                docker_image=self.args.lsf_image,
+                group='foo',  # FIXME
+                queue='foo',  # FIXME
+                command=cmds,
+                error_log=error_log,
+                output_log=out_log,
+                command_name=cmd_name,
+                config=config,
+                bsub_command_name=bsub_cmd,
+                job_name=job_name
+            )
+            copy_lsf_job.execute(dry=True)
+
+            # TODO:
+            # Return commands for execution step.
+
+        # Merging commands.
+
+        next_i = i + 1
+        for i, sample_name in enumerate(self.merge_cmds, next_i):
+            r1_cmds, r2_cmds = self.merge_cmds[sample_name]
+            cmds = r1_cmds + r2_cmds
+            error_log = f'{i}_merge_fastq_bsub.err'
+            cmd_name = f'{i}_merge_fastq.sh'
+            out_log = f'{i}_merge_fastq_bsub.out'
+            job_name = f'{i}_merge_fastq'
+            config = f'{i}_merge_fastq_bsub.yaml'
+            bsub_cmd = f'{i}_merge_fastq_bsub.sh'
+            bsub_log_dir = str(log_dir.resolve())
+            merge_lsf_job = mergefastq.Bsub(
+                log_dir=bsub_log_dir,
+                docker_volumes=lsf_vols,
+                docker_image=self.args.lsf_image,
+                group='foo',  # FIXME
+                queue='foo',  # FIXME
+                command=cmds,
+                error_log=error_log,
+                output_log=out_log,
+                command_name=cmd_name,
+                config=config,
+                bsub_command_name=bsub_cmd,
+                job_name=job_name
+            )
+            merge_lsf_job.execute(dry=True)
+
         return
 
 # __END__

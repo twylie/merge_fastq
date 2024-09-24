@@ -127,8 +127,6 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
     FileNotFoundError : The --rename input file does not exist.
 
     FileNotFoundError : A --samplemap input file does not exist.
-
-    IsADirectoryError : The --outdir directory already exists.
     """
     if Path(args.rename).is_file() is False:
         raise FileNotFoundError(
@@ -141,11 +139,6 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
                 'A --samplemap input file does not exist.',
                 smap_file
             )
-    if Path(args.outdir).is_dir() is True:
-        raise IsADirectoryError(
-            'The --outdir directory already exists.',
-            args.outdir
-        )
     return
 
 
@@ -173,5 +166,9 @@ if __name__ == '__main__':
         rename=rename_samples,
         samplemap=samplemap
     )
+    merge_fastq.setup_output_dirs()
+    merge_fastq.prepare_lsf_cmds()
+    # merge_fastq.launch_lsf_cmds()
+    # merge_fastq.write_df()
 
 # __END__
