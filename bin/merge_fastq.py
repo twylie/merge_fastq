@@ -150,7 +150,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 
 
 if __name__ == '__main__':
-    VERSION = '0.0.23'
+    VERSION = '0.0.25'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
@@ -168,7 +168,6 @@ if __name__ == '__main__':
 
     rename_samples = mergefastq.RenameSamples(args=args)
     samplemap = mergefastq.Samplemap(args=args, rename=rename_samples)
-    samplemap.write_df(file_path='/tmp/floop.tsv')
     merge_fastq = mergefastq.MergeFastq(
         args=args,
         rename=rename_samples,
