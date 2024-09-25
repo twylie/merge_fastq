@@ -192,8 +192,8 @@ if __name__ == '__main__':
     # one job per sample.
 
     merge_fastq.setup_output_dirs()
-    samplemap_df = str(Path(args.outdir) / 'samplemap.tsv')
-    samplemap.write_df(file_path=samplemap_df)
+    merged_df = Path(args.outdir) / 'merged_samplemap.tsv'
+    merge_fastq.write_df(file_path=str(merged_df.resolve()))
     merge_fastq.prepare_lsf_cmds()
     merge_fastq.launch_lsf_jobs()
 

@@ -12,6 +12,7 @@ from . rename_samples import RenameSamples  # type: ignore
 from . samplemap import Samplemap  # type: ignore
 from typing_extensions import Self
 from pathlib import Path
+import hashlib
 import gzip
 
 
@@ -34,7 +35,8 @@ class MergeFastq:
         self.__parse_fastq_copy_types()
         self.__setup_copy_cmds()
         self.__setup_merge_cmds()
-        self.__update_df_dest_fq_col()
+        self.__update_df_dest_fq()
+        self.__update_df_read_counts()
         return
 
     def __parse_fastq_copy_types(self: Self) -> None:
@@ -536,7 +538,7 @@ class MergeFastq:
             merge_job.execute(dry=self.args.lsf_dry)
         return
 
-    def __update_df_dest_fq_col(self: Self) -> None:
+    def __update_df_dest_fq(self: Self) -> None:
         """Update the destination FASTQ column in dataframe.
 
         Raises
@@ -568,6 +570,45 @@ class MergeFastq:
             raise ValueError(' Destination FASTQ indexes lengths differ.')
         else:
             self.samplemap_merged['merged_fastq_path'] = col_dest_fq_path
+        return
+
+    def __calc_file_md5(self: Self, file_path: str) -> str:
+        """Returns the MD5 hash for a specified file."""
+        with open(file_path, 'rb') as fh:
+            data = fh.read()
+            md5sum = hashlib.md5(data).hexdigest()
+        return md5sum
+
+    def write_df(self: Self, file_path: str) -> None:
+        """Write the merged FASTQ dataframe to a tab-delimited file."""
+        self.samplemap_merged.to_csv(file_path, sep='\t', index=False)
+        md5 = self.__calc_file_md5(file_path=file_path)
+        md5_path = file_path + '.MD5'
+        with open(md5_path, 'w') as fh:
+            fh.write(f'MD5 ({file_path}) = {md5}\n')
+        return
+
+    def __update_df_read_counts(self: Self) -> None:
+        """Update the GTAC supplied read counts in the dataframe."""
+        count_index: dict = dict()
+        df = self.samplemap_merged.copy()
+        dfg = df.groupby(['revised_sample_name', 'read_number'])
+        for i in dfg.groups:
+            sample_name, read_number = i
+            dfi = dfg.get_group(i)
+            merged_count = dfi.sum()['total_reads']
+            count_index[sample_name] = {'merged_count': merged_count}
+
+        col_end_pair_counts: list = list()
+        col_sample_counts: list = list()
+        for i in df.index:
+            sample_name = df.loc[i]['sample_name']
+            merged_reads = count_index[sample_name]['merged_count']
+            all_reads = merged_reads * 2
+            col_end_pair_counts.append(merged_reads)
+            col_sample_counts.append(all_reads)
+        self.samplemap_merged['end_pair_reads'] = col_end_pair_counts
+        self.samplemap_merged['sample_reads'] = col_sample_counts
         return
 
 # __END__
