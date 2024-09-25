@@ -178,7 +178,7 @@ if __name__ == '__main__':
     eval_cli_arguments(args=args)
 
     # Parse the input reagent files and create objects for downstream
-    # interrogation.
+    # processing.
 
     rename_samples = mergefastq.RenameSamples(args=args)
     samplemap = mergefastq.Samplemap(args=args, rename=rename_samples)
@@ -187,11 +187,14 @@ if __name__ == '__main__':
         rename=rename_samples,
         samplemap=samplemap
     )
+
+    # Proceed creating FASTQ merge commands mediated by LSF bsub jobs,
+    # one job per sample.
+
     merge_fastq.setup_output_dirs()
     samplemap_df = str(Path(args.outdir) / 'samplemap.tsv')
     samplemap.write_df(file_path=samplemap_df)
     merge_fastq.prepare_lsf_cmds()
     merge_fastq.launch_lsf_jobs()
-    # merge_fastq.write_df()
 
 # __END__
