@@ -589,14 +589,33 @@ class MergeFastq:
         return
 
     def __update_df_read_counts(self: Self) -> None:
-        """Update the GTAC supplied read counts in the dataframe."""
+        """Update the GTAC supplied read counts in the dataframe.
+
+        We will be tracking the read counts as supplied by the GTAC@MGI
+        sequencing core. Of interest are the per-FASTQ read counts, the
+        merged end pair (R1 & R2) counts, and the total number of reads
+        per sample. All of these values are calculated based on the
+        original Total Reads values supplied by GTAC@MGI in the
+        Samplemap files.
+
+        IMPORTANT: The read counts provided by this method are not the
+        manual read counts performed in the MergeFastq LSF jobs.
+
+        Raises
+        ------
+        ValueError : End pair counts column length does not match
+                     dataframe.
+
+        ValueError : Sample counts column length does not match
+                     dataframe.
+        """
         count_index: dict = dict()
         df = self.samplemap_merged.copy()
         dfg = df.groupby(['revised_sample_name', 'read_number'])
         for i in dfg.groups:
             sample_name, read_number = i
             dfi = dfg.get_group(i)
-            merged_count = dfi.sum()['total_reads']
+            merged_count = dfi.sum()['gtac_fastq_reads']
             count_index[sample_name] = {'merged_count': merged_count}
 
         col_end_pair_counts: list = list()
@@ -607,8 +626,22 @@ class MergeFastq:
             all_reads = merged_reads * 2
             col_end_pair_counts.append(merged_reads)
             col_sample_counts.append(all_reads)
-        self.samplemap_merged['end_pair_reads'] = col_end_pair_counts
-        self.samplemap_merged['sample_reads'] = col_sample_counts
+
+        if len(col_end_pair_counts) != len(self.samplemap_merged.index):
+            raise ValueError(
+                'End pair counts column length does not match dataframe.'
+            )
+
+        if len(col_sample_counts) != len(self.samplemap_merged.index):
+            raise ValueError(
+                'Sample counts column length does not match dataframe.'
+            )
+
+        self.samplemap_merged['gtac_end_pair_reads'] = col_end_pair_counts
+        self.samplemap_merged['gtac_sample_reads'] = col_sample_counts
+
+        # TODO: Run evaluations here...
+
         return
 
 # __END__

@@ -182,7 +182,7 @@ class Samplemap:
          'sample_name': 'H141_1_3_2',
          'samplemap_path': '/pwd/Samplemap.csv',
          'total_bases': 22707956820,
-         'total_reads': 75191910}
+         'gtac_fastq_reads': 75191910}
 
         Raises
         ------
@@ -277,7 +277,7 @@ class Samplemap:
         df_subset['library_type'] = library_type_col
         df_subset['total_bases'] = total_bases_col
         df_subset['samplemap_path'] = samplemap_path_col
-        df_subset['total_reads'] = total_reads_col
+        df_subset['gtac_fastq_reads'] = total_reads_col
         df_subset['esp_id'] = esp_id_col
         df_subset['pool_name'] = pool_name_col
         return df_subset
