@@ -6,11 +6,6 @@
 # Created     : Fri Sep 13 15:35:31 CDT 2024
 # Copyright   : Copyright (C) 2024 by T.N. Wylie. All rights reserved.
 
-# TODO: The Samplemap.csv FASTQ file names must be associated with
-# on-disk directories some how, perhaps with a "source dir" argument?
-# Seems like I was running the code before from within where the
-# original FASTQ lived, thus the path was the current working directory.
-
 """Merge FASTQ Files
 
 This script will take samplemap and project-specific information and
@@ -59,13 +54,39 @@ def collect_cli_arguments(version: str) -> argparse.Namespace:
     )
 
     parser.add_argument(
-        '--target-rp-count',
-        metavar='INT',
-        type=int,
+        '--lsf-group',
+        metavar='STR',
         action='store',
-        help='Overwrites the target read pair count for project.',
+        help='Group for LSF processing. [compute-kwylie]',
+        required=False,
+        default='compute-kwylie'
+    )
+
+    parser.add_argument(
+        '--lsf-queue',
+        metavar='STR',
+        action='store',
+        help='Queue for LSF processing. [general]',
+        required=False,
+        default='general'
+    )
+
+    parser.add_argument(
+        '--lsf-dry',
+        action='store_true',
+        help='Dry run for LSF processing. (default)',
         required=False
     )
+
+    parser.add_argument(
+        '--no-lsf-dry',
+        action='store_false',
+        dest='lsf_dry',
+        help='Executes LSF processing.',
+        required=False
+    )
+
+    parser.set_defaults(lsf_dry=True)
 
     # Required arguments.
 
@@ -143,7 +164,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 
 
 if __name__ == '__main__':
-    VERSION = '0.0.25'
+    VERSION = '0.0.27'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
@@ -167,8 +188,10 @@ if __name__ == '__main__':
         samplemap=samplemap
     )
     merge_fastq.setup_output_dirs()
+    samplemap_df = str(Path(args.outdir) / 'samplemap.tsv')
+    samplemap.write_df(file_path=samplemap_df)
     merge_fastq.prepare_lsf_cmds()
-    # merge_fastq.launch_lsf_cmds()
+    merge_fastq.launch_lsf_jobs()
     # merge_fastq.write_df()
 
 # __END__

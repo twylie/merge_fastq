@@ -8,14 +8,10 @@
 
 import mergefastq  # type: ignore
 import argparse
-import pandas as pd  # type: ignore
-from pandas import DataFrame  # type: ignore
 from . rename_samples import RenameSamples  # type: ignore
 from . samplemap import Samplemap  # type: ignore
 from typing_extensions import Self
 from pathlib import Path
-import re
-import hashlib
 import gzip
 
 
@@ -29,8 +25,10 @@ class MergeFastq:
         self.samplemap = samplemap
         self.copy_cmds: dict = dict()
         self.merge_cmds: dict = dict()
-        self.log_dir_path: str = str()
+        self.log_dir_path: Path = Path()
         self.sample_dir: dict = dict()
+        self.copy_jobs: list = list()
+        self.merge_jobs: list = list()
         self.__parse_fastq_copy_types()
         self.__setup_copy_cmds()
         self.__setup_merge_cmds()
@@ -409,13 +407,6 @@ class MergeFastq:
             Path(self.args.outdir).mkdir(parents=False, exist_ok=False)
 
         log_dir = Path(self.args.outdir) / '__bsub'
-        if log_dir.is_dir() is True:
-            raise IsADirectoryError(
-                'LSF log dir already exists.',
-                log_dir
-            )
-        else:
-            log_dir.mkdir(parents=False, exist_ok=False)
         self.log_dir_path = log_dir
 
         for sample_name in self.copy_cmds:
@@ -459,8 +450,8 @@ class MergeFastq:
                 log_dir=bsub_log_dir,
                 docker_volumes=lsf_vols,
                 docker_image=self.args.lsf_image,
-                group='foo',  # FIXME
-                queue='foo',  # FIXME
+                group=self.args.lsf_group,
+                queue=self.args.lsf_queue,
                 command=cmds,
                 error_log=error_log,
                 output_log=out_log,
@@ -469,10 +460,7 @@ class MergeFastq:
                 bsub_command_name=bsub_cmd,
                 job_name=job_name
             )
-            copy_lsf_job.execute(dry=True)
-
-            # TODO:
-            # Return commands for execution step.
+            self.copy_jobs.append(copy_lsf_job)
 
         # Merging commands.
 
@@ -491,8 +479,8 @@ class MergeFastq:
                 log_dir=bsub_log_dir,
                 docker_volumes=lsf_vols,
                 docker_image=self.args.lsf_image,
-                group='foo',  # FIXME
-                queue='foo',  # FIXME
+                group=self.args.lsf_group,
+                queue=self.args.lsf_queue,
                 command=cmds,
                 error_log=error_log,
                 output_log=out_log,
@@ -501,8 +489,23 @@ class MergeFastq:
                 bsub_command_name=bsub_cmd,
                 job_name=job_name
             )
-            merge_lsf_job.execute(dry=True)
+            self.merge_jobs.append(merge_lsf_job)
+        return
 
+    def launch_lsf_jobs(self: Self) -> None:
+        """Launch the copy and merge LSF jobs.
+
+        This method will launch the LSF bsub jobs that are defined in
+        the MergeFastq object. Both the copy and merge jobs will be
+        launched, in succession. If the --lsf-dry argument is passed,
+        all of the bsub jobs will be written to output, but they will
+        not be launched---i.e. a "dry run" of the pipeline; else, all
+        jobs will be launched and submitted to the LSF queue.
+        """
+        for copy_job in self.copy_jobs:
+            copy_job.execute(dry=self.args.lsf_dry)
+        for merge_job in self.merge_jobs:
+            merge_job.execute(dry=self.args.lsf_dry)
         return
 
 # __END__
