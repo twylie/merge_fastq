@@ -23,6 +23,8 @@ class MergeFastq:
         self.args = args
         self.rename = rename
         self.samplemap = samplemap
+        self.samplemap_merged = self.samplemap.copy_df()
+        self.dest_fq_index: dict = dict()
         self.copy_cmds: dict = dict()
         self.merge_cmds: dict = dict()
         self.log_dir_path: Path = Path()
@@ -32,6 +34,7 @@ class MergeFastq:
         self.__parse_fastq_copy_types()
         self.__setup_copy_cmds()
         self.__setup_merge_cmds()
+        self.__update_df_dest_fq_col()
         return
 
     def __parse_fastq_copy_types(self: Self) -> None:
@@ -93,6 +96,9 @@ class MergeFastq:
         ValueError : R1 and R2 flow cell ids do not match.
 
         ValueError : R1 and R2 lane numbers do not match.
+
+        ValueError : Sample name should not be duplicated in FASTQ
+                     index.
         """
         df_smaps = self.samplemap.copy_df()
         # TODO: Is revised sample name the appropriate key?
@@ -148,6 +154,17 @@ class MergeFastq:
             sample_dir = Path(self.args.outdir) / Path(sample_name)
             dest_r1_fq = sample_dir / Path(dest_name_r1)
             dest_r2_fq = sample_dir / Path(dest_name_r2)
+
+            if sample_name not in self.dest_fq_index.keys():
+                self.dest_fq_index[sample_name] = {
+                    'R1': str(dest_r1_fq.resolve()),
+                    'R2': str(dest_r2_fq.resolve())
+                }
+            else:
+                raise ValueError(
+                    'Sample name should not be duplicated in FASTQ index.',
+                    sample_name
+                )
 
             # FIXME:
             # src_r1_fq = '/Users/toddwylie/Desktop/DEVELOPMENT/virosearchTutorial/virosearch/testing/sample1.100k.r1.fastq.gz'
@@ -300,6 +317,17 @@ class MergeFastq:
             sample_dir = Path(self.args.outdir) / Path(sample_name)
             dest_r1_fq = sample_dir / Path(dest_name_r1)
             dest_r2_fq = sample_dir / Path(dest_name_r2)
+
+            if sample_name not in self.dest_fq_index.keys():
+                self.dest_fq_index[sample_name] = {
+                    'R1': str(dest_r1_fq.resolve()),
+                    'R2': str(dest_r2_fq.resolve())
+                }
+            else:
+                raise ValueError(
+                    'Sample name should not be duplicated in FASTQ index.',
+                    sample_name
+                )
 
             r1_is_gzip: list = list()
             for r1_fq in src_r1_fq:
@@ -506,6 +534,40 @@ class MergeFastq:
             copy_job.execute(dry=self.args.lsf_dry)
         for merge_job in self.merge_jobs:
             merge_job.execute(dry=self.args.lsf_dry)
+        return
+
+    def __update_df_dest_fq_col(self: Self) -> None:
+        """Update the destination FASTQ column in dataframe.
+
+        Raises
+        ------
+        ValueError : Sample name not in the destination FASTQ index.
+
+        ValueError : Destination FASTQ indexes lengths differ.
+        """
+        col_dest_fq_path: list = list()
+        for i in self.samplemap_merged.index:
+            df_i = self.samplemap_merged.loc[i]
+            sample_name = df_i['sample_name']
+            read_num = df_i['read_number']
+            if sample_name in self.dest_fq_index.keys():
+                if read_num == 1:
+                    col_dest_fq_path.append(
+                        self.dest_fq_index[sample_name]['R1']
+                    )
+                elif read_num == 2:
+                    col_dest_fq_path.append(
+                        self.dest_fq_index[sample_name]['R2']
+                    )
+            else:
+                raise ValueError(
+                    'Sample name not in the destination FASTQ index.',
+                    sample_name
+                )
+        if len(col_dest_fq_path) != len(self.samplemap_merged.index):
+            raise ValueError(' Destination FASTQ indexes lengths differ.')
+        else:
+            self.samplemap_merged['merged_fastq_path'] = col_dest_fq_path
         return
 
 # __END__
