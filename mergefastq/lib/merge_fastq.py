@@ -46,16 +46,15 @@ class MergeFastq:
         cardinality of sample ids to flowcells. For example, if a unique
         sample has 2 FASTQ (R1 & R2) and 1 associated flowcell, we don't
         need to merge the FASTQ, but rather simply copy them using the
-        revised sample name. Samples with more than this will require
-        merging of FASTQ files.
+        original sample name. Samples with more these attributes will
+        require merging of FASTQ files.
 
         Raises
         ------
         ValueError : FASTQ copy type counts differ.
         """
         df = self.samplemap.copy_df()
-        # TODO: Is revised sample name the appropriate key?
-        dfg = df.groupby('revised_sample_name')
+        dfg = df.groupby('sample_name')
         single_copy_ids: set = set()
         merge_copy_ids: set = set()
         for i, sample_name in enumerate(dfg.groups, 1):
@@ -107,7 +106,7 @@ class MergeFastq:
         """
         df_smaps = self.samplemap.copy_df()
         # TODO: Is revised sample name the appropriate key?
-        dfg_ids = df_smaps.groupby('revised_sample_name')
+        dfg_ids = df_smaps.groupby('sample_name')
         for sample_name in self.single_copy_ids:
             df = dfg_ids.get_group(sample_name)
 
@@ -281,7 +280,7 @@ class MergeFastq:
         """
         df_smaps = self.samplemap.copy_df()
         # TODO: Is revised sample name the appropriate key?
-        dfg_ids = df_smaps.groupby('revised_sample_name')
+        dfg_ids = df_smaps.groupby('sample_name')
         for sample_name in self.merge_copy_ids:
             df = dfg_ids.get_group(sample_name)
             dfg_read_num = df.groupby('read_number')
@@ -653,7 +652,7 @@ class MergeFastq:
         """
         count_index: dict = dict()
         df = self.samplemap_merged.copy()
-        dfg = df.groupby(['revised_sample_name', 'read_number'])
+        dfg = df.groupby(['sample_name', 'read_number'])
         for i in dfg.groups:
             sample_name, read_number = i
             dfi = dfg.get_group(i)
