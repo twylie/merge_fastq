@@ -54,6 +54,7 @@ class MergeFastq:
         ValueError : FASTQ copy type counts differ.
         """
         df = self.samplemap.copy_df()
+        # TODO: Is revised sample name the appropriate key?
         dfg = df.groupby('revised_sample_name')
         single_copy_ids: set = set()
         merge_copy_ids: set = set()
