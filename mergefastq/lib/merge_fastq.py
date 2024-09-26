@@ -101,6 +101,8 @@ class MergeFastq:
 
         ValueError : Sample name should not be duplicated in FASTQ
                      index.
+
+        ValueError : FASTQ comp or decomp file not found.
         """
         df_smaps = self.samplemap.copy_df()
         # TODO: Is revised sample name the appropriate key?
@@ -168,21 +170,36 @@ class MergeFastq:
                     sample_name
                 )
 
-            # FIXME:
-            # src_r1_fq = '/Users/toddwylie/Desktop/DEVELOPMENT/virosearchTutorial/virosearch/testing/sample1.100k.r1.fastq.gz'
-            # src_r2_fq = '/Users/toddwylie/Desktop/DEVELOPMENT/virosearchTutorial/virosearch/testing/sample1.100k.r2.fastq.gz'
+            if Path(src_r1_fq).is_file() is True:
+                src_r1_fq_eval = src_r1_fq
+            elif Path(src_r1_fq).is_file() is False:
+                if Path(src_r1_fq[:-3]).is_file() is True:
+                    src_r1_fq_eval = src_r1_fq[:-3]
+                elif Path(src_r1_fq[:-3]).is_file() is False:
+                    raise FileNotFoundError(
+                        'FASTQ comp or decomp file not found.',
+                        src_r1_fq
+                    )
 
-            src_r1_fq = '/tmp/sample1.100k.r2.fastq'
-            src_r2_fq = '/tmp/sample1.100k.r2.fastq'
+            if Path(src_r2_fq).is_file() is True:
+                src_r2_fq_eval = src_r2_fq
+            elif Path(src_r2_fq).is_file() is False:
+                if Path(src_r2_fq[:-3]).is_file() is True:
+                    src_r2_fq_eval = src_r2_fq[:-3]
+                elif Path(src_r2_fq[:-3]).is_file() is False:
+                    raise FileNotFoundError(
+                        'FASTQ comp or decomp file not found.',
+                        src_r2_fq
+                    )
 
-            with gzip.open(src_r1_fq, 'r') as fhi:
+            with gzip.open(src_r1_fq_eval, 'r') as fhi:
                 try:
                     fhi.read(1)
                     is_src_r1_fq_gzip = True
                 except gzip.BadGzipFile:
                     is_src_r1_fq_gzip = False
 
-            with gzip.open(src_r2_fq, 'r') as fhi:
+            with gzip.open(src_r2_fq_eval, 'r') as fhi:
                 try:
                     fhi.read(1)
                     is_src_r2_fq_gzip = True
@@ -258,6 +275,8 @@ class MergeFastq:
         ValueError : Merge-samples revised sample names are not equal.
 
         ValueError : Merge-samples revised names must be unique.
+
+        ValueError : FASTQ comp or decomp file not found.
         """
         df_smaps = self.samplemap.copy_df()
         # TODO: Is revised sample name the appropriate key?
@@ -333,8 +352,17 @@ class MergeFastq:
 
             r1_is_gzip: list = list()
             for r1_fq in src_r1_fq:
-                r1_fq = '/tmp/sample1.100k.r2.fastq'  # FIXME:
-                with gzip.open(r1_fq, 'r') as fhi:
+                if Path(r1_fq).is_file() is True:
+                    r1_fq_eval = r1_fq
+                elif Path(r1_fq).is_file() is False:
+                    if Path(r1_fq[:-3]).is_file() is True:
+                        r1_fq_eval = r1_fq[:-3]
+                    elif Path(r1_fq[:-3]).is_file() is False:
+                        raise FileNotFoundError(
+                            'FASTQ comp or decomp file not found.',
+                            r1_fq
+                        )
+                with gzip.open(r1_fq_eval, 'r') as fhi:
                     try:
                         fhi.read(1)
                         is_src_r1_fq_gzip = True
@@ -344,8 +372,17 @@ class MergeFastq:
 
             r2_is_gzip: list = list()
             for r2_fq in src_r2_fq:
-                r2_fq = '/tmp/sample1.100k.r2.fastq'  # FIXME:
-                with gzip.open(r2_fq, 'r') as fhi:
+                if Path(r2_fq).is_file() is True:
+                    r2_fq_eval = r2_fq
+                elif Path(r2_fq).is_file() is False:
+                    if Path(r2_fq[:-3]).is_file() is True:
+                        r2_fq_eval = r2_fq[:-3]
+                    elif Path(r2_fq[:-3]).is_file() is False:
+                        raise FileNotFoundError(
+                            'FASTQ comp or decomp file not found.',
+                            r2_fq
+                        )
+                with gzip.open(r2_fq_eval, 'r') as fhi:
                     try:
                         fhi.read(1)
                         is_src_r2_fq_gzip = True
