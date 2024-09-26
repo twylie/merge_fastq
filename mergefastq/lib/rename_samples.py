@@ -51,6 +51,8 @@ class RenameSamples:
                      unique.
 
         ValueError : The revised_sample_id column values are not unique.
+
+        ValueError : Samplemap to revised id is not one-to-one.
         """
         self.df = pd.read_csv(self.args.rename, sep='\t')
 
@@ -82,6 +84,18 @@ class RenameSamples:
         if revised_sample_id_count != revised_sample_id_ucount:
             raise ValueError('The revised_sample_id column values '
                              'are not unique.')
+
+        dfg = self.df.groupby('samplemap_sample_id')
+        for sample_id in dfg.groups:
+            sample_id_count = len(dfg.get_group(sample_id))
+            if sample_id_count > 1:
+                raise ValueError('Samplemap to revised id is not one-to-one.')
+
+        dfg = self.df.groupby('revised_sample_id')
+        for sample_id in dfg.groups:
+            sample_id_count = len(dfg.get_group(sample_id))
+            if sample_id_count > 1:
+                raise ValueError('Samplemap to revised id is not one-to-one.')
         return
 
     def copy_df(self: Self) -> DataFrame:

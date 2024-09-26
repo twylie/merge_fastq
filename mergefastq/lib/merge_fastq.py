@@ -608,6 +608,10 @@ class MergeFastq:
 
         ValueError : Sample counts column length does not match
                      dataframe.
+
+        ValueError : GTAC sample counts do not match for R1 & R2.
+
+        ValueError : GTAC end pair counts do not match for R1 & R2.
         """
         count_index: dict = dict()
         df = self.samplemap_merged.copy()
@@ -640,8 +644,29 @@ class MergeFastq:
         self.samplemap_merged['gtac_end_pair_reads'] = col_end_pair_counts
         self.samplemap_merged['gtac_sample_reads'] = col_sample_counts
 
-        # TODO: Run evaluations here...
-
+        dfg = self.samplemap_merged.groupby('revised_sample_name')
+        for sample_name in dfg.groups:
+            dfi = dfg.get_group(sample_name)
+            dfg_r1_fastq = dfi.groupby('read_number').get_group(1)
+            r1_sample_counts = list(set(dfg_r1_fastq['gtac_sample_reads']))[0]
+            r1_ep_counts = list(set(dfg_r1_fastq['gtac_end_pair_reads']))[0]
+            dfg_r2_fastq = dfi.groupby('read_number').get_group(2)
+            r2_sample_counts = list(set(dfg_r2_fastq['gtac_sample_reads']))[0]
+            r2_ep_counts = list(set(dfg_r2_fastq['gtac_end_pair_reads']))[0]
+            if r1_sample_counts != r2_sample_counts:
+                raise ValueError(
+                    'GTAC sample counts do not match for R1 & R2.',
+                    sample_name,
+                    f'R1={r1_sample_counts}',
+                    f'R2={r2_sample_counts}'
+                )
+            if r1_ep_counts != r2_ep_counts:
+                raise ValueError(
+                    'GTAC end pair counts do not match for R1 & R2.',
+                    sample_name,
+                    f'R1={r1_ep_counts}',
+                    f'R2={r2_ep_counts}'
+                )
         return
 
 # __END__
