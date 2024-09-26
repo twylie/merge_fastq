@@ -43,7 +43,7 @@ class Samplemap:
         needed for FASTQ merging, we will type the Samplemap file and
         deal with the columns based on the Samplemap format type.
 
-        NOTE: There are 2 samplemap files provided by GTAC@MGI
+        IMPORTANT: There are 2 samplemap files provided by GTAC@MGI
         (Samplemap.csv and Samplemap2.csv). We will always expect the
         Samplemap.csv file as input.
 
@@ -121,6 +121,10 @@ class Samplemap:
         file merging and sequence throughput assessment. We will parse
         the desired fields from the Samplemap file and place them within
         a dataframe for downstream processing.
+
+        NOTE: We expect the FASTQ file name from GTAC@MGI to have '_R1_'
+        or '_R2_' somewhere in the name, else an exception will be
+        thrown.
 
         We are making the following assumptions regarding the new
         2024 Samplemap formats:
@@ -217,7 +221,7 @@ class Samplemap:
             total_reads = df_i['Total Reads']
             esp_id = df_i['ESP ID']
             pool_name = df_i['Pool Name']
-            read_num_tag = re.search('_R[12]_', df_i['FASTQ'])
+            read_num_tag = re.search('_R[12]_', df_i['FASTQ'], re.IGNORECASE)
             if read_num_tag is not None:
                 match read_num_tag.group():
                     case '_R1_':
