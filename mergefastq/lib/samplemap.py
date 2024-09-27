@@ -321,12 +321,12 @@ class Samplemap:
             for ii in df_subset.index:
                 fastq = df_subset.loc[ii]['fastq']
                 fastq_path = Path(fastq_dir) / Path(fastq)
-                fastq_path_col.append(fastq_path.as_posix())
+                fastq_path_col.append(str(fastq_path.resolve()))
             df_subset['fastq_path'] = fastq_path_col
             self.smaps.update({
                 i: {
                     'samplemap_type': smap_type,
-                    'samplemap_path': str(Path(smap).as_posix()),
+                    'samplemap_path': str(Path(smap).resolve()),
                     'fastq_dir': fastq_dir,
                     'df': df_subset,
                 }
