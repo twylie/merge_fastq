@@ -10,6 +10,7 @@ import argparse
 import pandas as pd  # type: ignore
 from typing_extensions import Self
 from pandas import DataFrame  # type: ignore
+from pathlib import Path
 
 
 class RenameSamples:
@@ -101,5 +102,18 @@ class RenameSamples:
     def copy_df(self: Self) -> DataFrame:
         """Return a copy of the dataframe from the RenameSamples class."""
         return self.df.copy()
+
+    def copy_rename_file(self: Self, outdir: str) -> DataFrame:
+        """Copy the rename file to another directory."""
+        if Path(outdir).is_dir() is False:
+            raise IsADirectoryError(
+                'Outdir directory does not exist.',
+                outdir
+            )
+        else:
+            src = Path(self.args.rename)
+            dest = Path(outdir) / 'rename.tsv'
+            dest.write_text(src.read_text())
+        return
 
 # __END__

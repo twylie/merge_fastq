@@ -164,7 +164,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 
 
 if __name__ == '__main__':
-    VERSION = '0.0.32'
+    VERSION = '0.0.34'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
@@ -192,6 +192,7 @@ if __name__ == '__main__':
     # one job per sample.
 
     merge_fastq.setup_output_dirs()
+    rename_samples.copy_rename_file(outdir=args.outdir)
     merged_df = Path(args.outdir) / 'merged_samplemap.tsv'
     merge_fastq.write_df(file_path=str(merged_df.resolve()))
     merge_fastq.prepare_lsf_cmds()
