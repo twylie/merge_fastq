@@ -103,8 +103,13 @@ class RenameSamples:
         """Return a copy of the dataframe from the RenameSamples class."""
         return self.df.copy()
 
-    def copy_rename_file(self: Self, outdir: str) -> DataFrame:
-        """Copy the rename file to another directory."""
+    def copy_rename_file(self: Self, outdir: str) -> None:
+        """Copy the rename file to another directory.
+
+        Raises
+        ------
+        IsADirectoryError : Outdir directory does not exist.
+        """
         if Path(outdir).is_dir() is False:
             raise IsADirectoryError(
                 'Outdir directory does not exist.',

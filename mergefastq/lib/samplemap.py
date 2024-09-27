@@ -24,9 +24,9 @@ class Samplemap:
         self.args = args
         self.rename = rename
         self.smaps: dict = dict()
+        self.smap_paths: list = list()
         self.__parse_samplemaps()
-        # FIXME:
-        # self.__eval_origin_fastq()
+        self.__eval_origin_fastq()
         self.__eval_smap_seq_indexes()
         self.__eval_compare_sample_ids()
         self.__add_rename_ids_to_df()
@@ -331,6 +331,7 @@ class Samplemap:
                     'df': df_subset,
                 }
             })
+            self.smap_paths.append(str(Path(smap).resolve()))
         else:
             raise TypeError(
                 'Unknown samplemap format type encountered.',
@@ -531,5 +532,34 @@ class Samplemap:
     def copy_df(self: Self) -> DataFrame:
         """Return a copy of the dataframe from the Samplemap class."""
         return self.df_smaps.copy()
+
+    def copy_samplemaps(self: Self, outdir: str) -> None:
+        """Copy original samplemaps to the output directory.
+
+        Raises
+        ------
+        IsADirectoryError : Outdir directory does not exist.
+
+        FileNotFoundError : Samplemap file does not exist.
+        """
+        if Path(outdir).is_dir() is False:
+            raise IsADirectoryError(
+                'Outdir directory does not exist.',
+                outdir
+            )
+        else:
+            for i, smap in enumerate(self.smap_paths, 1):
+                src = Path(smap)
+                if src.is_file is False:
+                    raise FileNotFoundError(
+                        'Samplemap file does not exist.',
+                        smap
+                    )
+                else:
+                    dest_dir = Path(outdir) / 'src_samplemaps' / f'batch_{i}'
+                    dest_dir.mkdir(parents=True, exist_ok=False)
+                    dest = dest_dir / 'Samplemap.csv'
+                    dest.write_text(src.read_text())
+        return
 
 # __END__
