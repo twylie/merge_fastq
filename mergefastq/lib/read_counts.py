@@ -9,7 +9,6 @@
 import argparse
 import pandas as pd  # type: ignore
 from typing_extensions import Self
-from pandas import DataFrame  # type: ignore
 from pathlib import Path
 
 
@@ -136,7 +135,6 @@ class ReadCounts:
             df_seqcov[perct_label] = collection[i]['col_perct_of_target']
             df_seqcov[is_passed_label] = collection[i]['is_pass_perct_target']
         self.df_gtac_seqcov = df_seqcov
-        print(self.df_gtac_seqcov.loc[0])
         return
 
 # __END__
