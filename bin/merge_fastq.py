@@ -20,6 +20,8 @@ import sys
 from pathlib import Path
 
 
+# FUNCTIONS ###################################################################
+
 def collect_cli_arguments(version: str) -> argparse.Namespace:
     """Collect the command line arguments."""
     parser = argparse.ArgumentParser(
@@ -163,6 +165,8 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
     return
 
 
+# MAIN ########################################################################
+
 if __name__ == '__main__':
     VERSION = '0.0.35'
 
@@ -196,6 +200,11 @@ if __name__ == '__main__':
     samplemap.copy_samplemaps(outdir=args.outdir)
     merged_df = Path(args.outdir) / 'merged_samplemap.tsv'
     merge_fastq.write_df(file_path=str(merged_df.resolve()))
+    read_counts = mergefastq.ReadCounts(
+        args=args,
+        merged_tsv=str(merged_df.resolve())
+    )
+    read_counts.calc_gtac_read_coverage()
     merge_fastq.prepare_lsf_cmds()
     merge_fastq.launch_lsf_jobs()
 
