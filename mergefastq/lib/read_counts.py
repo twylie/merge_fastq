@@ -10,6 +10,7 @@ import argparse
 import pandas as pd  # type: ignore
 from typing_extensions import Self
 from pathlib import Path
+import hashlib
 
 
 class ReadCounts:
@@ -22,7 +23,7 @@ class ReadCounts:
         self.merged_tsv = merged_tsv
         self.__set_target_coverages()
         self.__populate_df()
-        self.target_min_perct = 0.05  # FIXME
+        self.target_min_perct = 80
         return
 
     def __populate_df(self: Self) -> None:
@@ -50,10 +51,19 @@ class ReadCounts:
         files.
         """
         target_read_counts = (
+            100_000,
             200_000,
+            300_000,
+            400_000,
             500_000,
             1_000_000,
+            1_500_000,
             2_000_000,
+            2_500_000,
+            3_000_000,
+            3_500_000,
+            4_000_000,
+            4_500_000,
             5_000_000,
             10_000_000,
             20_000_000,
@@ -76,7 +86,6 @@ class ReadCounts:
         col_target_min_perct: list = list()
         target_cols: dict = dict()
         for i, sample_name in enumerate(dfg.groups):
-            # FIXME: We need labels for the target counts values.
             col_sample_name.append(sample_name)
             col_target_min_perct.append(self.target_min_perct)
             dfi = dfg.get_group(sample_name)
@@ -99,7 +108,7 @@ class ReadCounts:
             for target_counts in self.target_counts:
                 target_cols[i]['col_target_counts'].append(target_counts)
                 perct_of_target = round(
-                    (sample_counts / target_counts) * 100, 1
+                    (sample_counts / target_counts) * 100, 2
                 )
                 target_cols[i]['col_perct_of_target'].append(perct_of_target)
                 if perct_of_target < self.target_min_perct:
@@ -135,6 +144,22 @@ class ReadCounts:
             df_seqcov[perct_label] = collection[i]['col_perct_of_target']
             df_seqcov[is_passed_label] = collection[i]['is_pass_perct_target']
         self.df_gtac_seqcov = df_seqcov
+        return
+
+    def __calc_file_md5(self: Self, file_path: str) -> str:
+        """Returns the MD5 hash for a specified file."""
+        with open(file_path, 'rb') as fh:
+            data = fh.read()
+            md5sum = hashlib.md5(data).hexdigest()
+        return md5sum
+
+    def write_df(self: Self, file_path: str) -> None:
+        """Write the GTAC read count dataframe to a tab-delimited file."""
+        self.df_gtac_seqcov.to_csv(file_path, sep='\t', index=False)
+        md5 = self.__calc_file_md5(file_path=file_path)
+        md5_path = file_path + '.MD5'
+        with open(md5_path, 'w') as fh:
+            fh.write(f'MD5 ({file_path}) = {md5}\n')
         return
 
 # __END__

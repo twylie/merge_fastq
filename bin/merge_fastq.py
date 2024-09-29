@@ -168,7 +168,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 # MAIN ########################################################################
 
 if __name__ == '__main__':
-    VERSION = '0.0.37'
+    VERSION = '0.0.38'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
@@ -204,6 +204,9 @@ if __name__ == '__main__':
         args=args,
         merged_tsv=str(merged_df.resolve())
     )
+    read_counts.calc_gtac_read_coverage()
+    gtac_read_counts = Path(args.outdir) / 'gtac_read_counts.tsv'
+    read_counts.write_df(file_path=str(gtac_read_counts.resolve()))
     read_counts.calc_gtac_read_coverage()
     merge_fastq.prepare_lsf_cmds()
     merge_fastq.launch_lsf_jobs()
