@@ -220,13 +220,14 @@ class MergeFastq:
                        f'> {dest_r1_fq}.counts')
                 r1_copy_cmds.append(cmd)
             elif is_src_r1_fq_gzip is False:
+                src_r1_fq_stem = src_r1_fq[:-3]
                 dest_r1_fq_stem = dest_r1_fq.as_posix()[:-3]
-                r1_copy_cmds.append(f'cp {src_r1_fq} {dest_r1_fq_stem}')
+                r1_copy_cmds.append(f'cp {src_r1_fq_stem} {dest_r1_fq_stem}')
                 r1_copy_cmds.append(f'gzip {dest_r1_fq_stem}')
                 r1_copy_cmds.append(
                     f'md5sum {dest_r1_fq_stem}.gz > {dest_r1_fq_stem}.gz.MD5'
                 )
-                cmd = (f'echo $(zgrep -c ^ {dest_r1_fq_stem}.gz / 4 | bc '
+                cmd = (f'echo $(zgrep -c ^ {dest_r1_fq_stem}.gz) / 4 | bc '
                        f'> {dest_r1_fq_stem}.gz.counts')
                 r1_copy_cmds.append(cmd)
 
@@ -240,13 +241,14 @@ class MergeFastq:
                        f'> {dest_r2_fq}.counts')
                 r2_copy_cmds.append(cmd)
             elif is_src_r2_fq_gzip is False:
+                src_r2_fq_stem = src_r2_fq[:-3]
                 dest_r2_fq_stem = dest_r2_fq.as_posix()[:-3]
-                r2_copy_cmds.append(f'cp {src_r2_fq} {dest_r2_fq_stem}')
+                r2_copy_cmds.append(f'cp {src_r2_fq_stem} {dest_r2_fq_stem}')
                 r2_copy_cmds.append(f'gzip {dest_r2_fq_stem}')
                 r2_copy_cmds.append(
                     f'md5sum {dest_r2_fq_stem}.gz > {dest_r2_fq_stem}.gz.MD5'
                 )
-                cmd = (f'echo $(zgrep -c ^ {dest_r2_fq_stem}.gz / 4 | bc '
+                cmd = (f'echo $(zgrep -c ^ {dest_r2_fq_stem}.gz) / 4 | bc '
                        f'> {dest_r2_fq_stem}.gz.counts')
                 r2_copy_cmds.append(cmd)
 
@@ -395,6 +397,9 @@ class MergeFastq:
             # may have to copy and compress some of the source FASTQ
             # files prior to merging.
 
+            # FIXME: Not printing the 'cp' portion of the LSF commands
+            # for some reason...
+
             r1_merge_cmds: list = list()
             tmp_r1: set = set()
             r1_cat_order: list = list()
@@ -412,7 +417,7 @@ class MergeFastq:
             cat_files = ' '.join(r1_cat_order)
             r1_merge_cmds.append(f'cat {cat_files} > {dest_r1_fq}')
             r1_merge_cmds.append(f'md5sum {dest_r1_fq} > {dest_r1_fq}.MD5')
-            cmd = (f'echo $(zgrep -c ^ {dest_r1_fq} / 4 | bc '
+            cmd = (f'echo $(zgrep -c ^ {dest_r1_fq}) / 4 | bc '
                    f'> {dest_r1_fq}.counts')
             r1_merge_cmds.append(cmd)
             if tmp_r1:
@@ -436,7 +441,7 @@ class MergeFastq:
             cat_files = ' '.join(r2_cat_order)
             r2_merge_cmds.append(f'cat {cat_files} > {dest_r2_fq}')
             r2_merge_cmds.append(f'md5sum {dest_r2_fq} > {dest_r2_fq}.MD5')
-            cmd = (f'echo $(zgrep -c ^ {dest_r2_fq} / 4 | bc '
+            cmd = (f'echo $(zgrep -c ^ {dest_r2_fq}) / 4 | bc '
                    f'> {dest_r2_fq}.counts')
             r2_merge_cmds.append(cmd)
             if tmp_r2:
