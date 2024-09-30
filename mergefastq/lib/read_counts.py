@@ -14,11 +14,88 @@ import hashlib
 
 
 class ReadCounts:
-    """A class for read count evaluation."""
+    """A class for read count evaluation.
+
+    This class provides methods for calculating and evaluating FASTQ
+    file read counts. We will handle both (1) read counts as provided by
+    GTAC@MGI (see Samplemap class) and (2) independent read counts (see
+    MergeFastq class).
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Arguments for merging FASTQ files as provided by argparse.
+
+    merged_tsv : str
+        A qualified path to a merged dataframe file as written by the
+        MergeFastq class.
+
+    Attributes
+    ----------
+    args : argparse.Namespace
+        Arguments for merging FASTQ files as provided by argparse.
+
+    df_gtac_seqcov : DataFrame
+        A dataframe of evaluated sequence throughput for samples from
+        the MergeFastq object. Calculations are based on the original
+        FASTQ read counts provided by GTAC@MGI.
+
+    df_merged : DataFrame
+        A merged dataframe as provided by the MergeFastq class.
+
+    merged_tsv : str
+        A qualified path to a merged dataframe file as written by the
+        MergeFastq class.
+
+    target_counts : tuple
+        A tuple of values use to evaluate the expected read count
+        throughput of a given sample. Update this tuple to reduce or
+        expand the number of evaluations.
+
+    target_min_perct = int [80]
+        The minimum percent of target sequence throughput for a sample
+        to pass.
+
+    Methods
+    -------
+    calc_gtac_read_coverage()
+        Calculates the GTAC sample read count sequence throughput.
+
+    write_df(file_path)
+        Write the GTAC read count dataframe to a tab-delimited file.
+
+    Examples
+    --------
+    read_counts = ReadCounts(
+        args=args,
+        merged_tsv=merged_tsv
+    )
+    read_counts.calc_gtac_read_coverage()
+    gtac_read_counts = Path(args.outdir) / 'gtac_read_counts.tsv'
+    read_counts.write_df(file_path=str(gtac_read_counts.resolve()))
+    """
 
     def __init__(self: Self, args: argparse.Namespace,
                  merged_tsv: str) -> None:
-        """Construct the class."""
+        """Construct the class.
+
+        Parameters
+        ----------
+        args : argparse.Namespace
+            Arguments for merging FASTQ files as provided by argparse.
+
+        merged_tsv : str
+            A qualified path to a merged dataframe file as written by
+            the MergeFastq class.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.args = args
         self.merged_tsv = merged_tsv
         self.__set_target_coverages()
@@ -29,9 +106,18 @@ class ReadCounts:
     def __populate_df(self: Self) -> None:
         """Populate the merged samplemap dataframe.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        FileNotFoundError : Merged samplemap file does not exist.
+        FileNotFoundError
+            Merged samplemap file does not exist.
+
+        Returns
+        -------
+        None
         """
         merged_tsv_path = Path(self.merged_tsv)
         if merged_tsv_path.is_file() is False:
@@ -49,6 +135,18 @@ class ReadCounts:
         We are populating a predefined set of target read counts values
         that will be used to evaluate actual read counts from FASTQ
         files.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
         """
         target_read_counts = (
             100_000,
@@ -75,7 +173,20 @@ class ReadCounts:
         return
 
     def calc_gtac_read_coverage(self: Self) -> None:
-        """Calculates the GTAC sample read count sequence throughput."""
+        """Calculates the GTAC sample read count sequence throughput.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         # FIXME: Needs evaluations throughout.
         df = self.df_merged.copy()
         dfg = df.groupby('revised_sample_name')
@@ -147,14 +258,42 @@ class ReadCounts:
         return
 
     def __calc_file_md5(self: Self, file_path: str) -> str:
-        """Returns the MD5 hash for a specified file."""
+        """Returns the MD5 hash for a specified file.
+
+        Parameters
+        ----------
+        file_path : str
+            A qualified file path for which to calculate the MD5 hash.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         with open(file_path, 'rb') as fh:
             data = fh.read()
             md5sum = hashlib.md5(data).hexdigest()
         return md5sum
 
     def write_df(self: Self, file_path: str) -> None:
-        """Write the GTAC read count dataframe to a tab-delimited file."""
+        """Write the GTAC read count dataframe to a tab-delimited file.
+
+        Parameters
+        ----------
+        file_path : str
+            A qualified file path to write the read counts dataframe
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.df_gtac_seqcov.to_csv(file_path, sep='\t', index=False)
         md5 = self.__calc_file_md5(file_path=file_path)
         md5_path = file_path + '.MD5'

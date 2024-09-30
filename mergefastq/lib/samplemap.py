@@ -17,10 +17,82 @@ import hashlib
 
 
 class Samplemap:
+    """A class for parsing GTAC@MGI Samplemap.csv files.
+
+    GTAC@MGI provides a Samplemap.csv file with FASTQ files. This file
+    provides basic information related to the sequencing batch.
+    Unfortunately, this file has been inconsistent across projects and
+    sequencing batches, and the fields provided are not always in the
+    same order. This class provides methods for importing and handling
+    the samplemap information.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Arguments for merging FASTQ files as provided by argparse.
+
+    rename : RenameSamples
+        A RenameSamples object from the the mergefastq package.
+
+    Attributes
+    ----------
+    args : argparse.Namespace
+        Arguments for merging FASTQ files as provided by argparse.
+
+    df_smaps : DataFrame
+        A concatenated dataframe of all of the user supplied
+        Samplemap.csv files.
+
+    rename : RenameSamples
+        A RenameSamples object from the the mergefastq package.
+
+    smap_paths : list
+        A list of paths to the original Samplemap.csv files supplied by
+        the user.
+
+    smaps : dict
+        A dictionary of the individual samplemap dataframes and
+        corresponding metadata ('samplemap_type', 'samplemap_path',
+        'fastq_dir', 'df'). These are the representations prior to
+        concatenation.
+
+    Methods
+    -------
+    write_df(file_path)
+        Write the unified sample dataframe to a tab-delimited file.
+
+    copy_df() -> DataFrame
+        Return a copy of the dataframe from the Samplemap class.
+
+    copy_samplemaps(outdir)
+        Copy original samplemaps to the output directory.
+
+    Examples
+    --------
+    samplemap = Samplemap(args=args, rename=rename_samples)
+    samplemap.copy_samplemaps(outdir=outdir)
+    """
 
     def __init__(self: Self, args: argparse.Namespace,
                  rename: RenameSamples) -> None:
-        """Construct the class."""
+        """Construct the class.
+
+        Parameters
+        ----------
+        args : argparse.Namespace
+            Arguments for merging FASTQ files as provided by argparse.
+
+        rename : RenameSamples
+            A RenameSamples object from the the mergefastq package.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.args = args
         self.rename = rename
         self.smaps: dict = dict()
@@ -47,11 +119,6 @@ class Samplemap:
         (Samplemap.csv and Samplemap2.csv). We will always expect the
         Samplemap.csv file as input.
 
-        Parameters
-        ----------
-        smap : str
-            Fully qualified path to a Samplemap file.
-
         Format Types
         ------------
         smap_mid_2024_format:
@@ -73,16 +140,23 @@ class Samplemap:
             16. % >Q30
             17. Avg Q Score
 
+        Parameters
+        ----------
+        smap : str
+            Fully qualified path to a Samplemap file.
+
+        Raises
+        ------
+        ValueError
+            File name does not match Samplemap.csv format.
+
+        TypeError
+            Unknown samplemap format type encountered.
+
         Returns
         -------
         smap_type : str
             A defined format type for a given Samplemap file.
-
-        Raises
-        ------
-        ValueError : File name does not match Samplemap.csv format.
-
-        TypeError : Unknown samplemap format type encountered.
         """
         smap_file_name = Path(smap).stem + Path(smap).suffix
         if smap_file_name != 'Samplemap.csv':
@@ -188,11 +262,26 @@ class Samplemap:
          'total_bases': 22707956820,
          'gtac_fastq_reads': 75191910}
 
+        Parameters
+        ----------
+        smap : str
+            A qualified path to a Samplemap.csv file.
+
         Raises
         ------
-        ValueError : Read-pair number tag is not R1 or R2.
+        ValueError
+            Read-pair number tag is not R1 or R2.
 
-        ValueError : Read-pair number tag is None.
+        ValueError
+            Read-pair number tag is None.
+
+        ValueError
+            Dataframe field row lengths not of equal length
+
+        Returns
+        -------
+        DataFrame
+            Returns a formatted Samplemap dataframe.
         """
         (file_name_col,
          flow_cell_id_col,
@@ -311,7 +400,12 @@ class Samplemap:
 
         Raises
         ------
-        TypeError : Unknown samplemap format type encountered.
+        TypeError
+            Unknown samplemap format type encountered.
+
+        Returns
+        -------
+        None
         """
         if smap_type == 'smap_mid_2024_format':
             df_subset = self.__smap_mid_2024_to_df(smap=smap)
@@ -347,9 +441,18 @@ class Samplemap:
         the case, we will flag the samples for manual intervention and
         stop the process of merging FASTQ files.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        ValueError : Sample exists across multiple batches.
+        ValueError
+            Sample exists across multiple batches.
+
+        Returns
+        -------
+        None
         """
         df = self.df_smaps.copy()
         dfg = df.groupby('sample_name')
@@ -367,7 +470,20 @@ class Samplemap:
         return
 
     def __concatenate_samplemaps(self: Self) -> None:
-        """Concatenate all of the samplemap dataframes into one."""
+        """Concatenate all of the samplemap dataframes into one.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         dfs: list = list()
         for i in self.smaps:
             dfs.append(self.smaps[i]['df'])
@@ -375,7 +491,20 @@ class Samplemap:
         return
 
     def __parse_samplemaps(self: Self) -> None:
-        """Parse all of the input Samplemap files."""
+        """Parse all of the input Samplemap files.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         for i, smap in enumerate(self.args.samplemap, 1):
             smap_type = self.__type_samplemap_format(smap=smap)
             self.__parse_samplemap(i=i, smap=smap, smap_type=smap_type)
@@ -391,9 +520,18 @@ class Samplemap:
         will pass if either (1) the compressed FASTQ or (2) decompressed
         FASTQ version is accessible on-disk.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        FileNotFoundError : Original FASTQ file is not found.
+        FileNotFoundError
+            Original FASTQ file is not found.
+
+        Returns
+        -------
+        None
         """
         for batch_i in self.smaps:
             df = self.smaps[batch_i]['df'].copy()
@@ -425,10 +563,19 @@ class Samplemap:
         are missing sample ids, we will stop processing and alert the
         end user.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        ValueError : Sample ids for Samplemap and RenameSamples classes
-                     do not match.
+        ValueError
+            Sample ids for Samplemap and RenameSamples classes do not
+            match.
+
+        Returns
+        -------
+        None
         """
         df_rename = self.rename.copy_df()
         rename_sample_ids = set(df_rename['samplemap_sample_id'])
@@ -444,9 +591,18 @@ class Samplemap:
         Sample ids to index sequence cardinality should be one-to-one
         for all samples.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        ValueError : Bad sample id to sequence index cardinality.
+        ValueError
+            Bad sample id to sequence index cardinality.
+
+        Returns
+        -------
+        None
         """
         df = self.df_smaps.copy()
         dfg = df.groupby('sample_name')
@@ -462,7 +618,23 @@ class Samplemap:
         return
 
     def __calc_file_md5(self: Self, file_path: str) -> str:
-        """Returns the MD5 hash for a specified file."""
+        """Returns the MD5 hash for a specified file.
+
+        Parameters
+        ----------
+        file_path : str
+            A qualified path to the file to receive a MD5 hash.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        str
+            Returns the MD5 hash value associated with the supplied
+            file.
+        """
         with open(file_path, 'rb') as fh:
             data = fh.read()
             md5sum = hashlib.md5(data).hexdigest()
@@ -477,12 +649,25 @@ class Samplemap:
         the FASTQ merging functions--i.e. the final merged FASTQ file
         names will be taken from the revised sample names.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        IndexError : Samplemap samplemap_sample_id is not in the
-                     RenameSamples index.
+        IndexError
+            Samplemap samplemap_sample_id is not in the RenameSamples
+            index.
 
-        ValueError : RenameSamples revised_sample_id is null.
+        ValueError
+            RenameSamples revised_sample_id is null.
+
+        ValueError
+            Samplemap and RenameSamples sample id counts differ.
+
+        Returns
+        -------
+        None
         """
         # TODO: This section is very important in that the old sample
         # ids and the new sample ids must match correctly. Review the
@@ -521,7 +706,22 @@ class Samplemap:
         return
 
     def write_df(self: Self, file_path: str) -> None:
-        """Write the unified sample dataframe to a tab-delimited file."""
+        """Write the unified sample dataframe to a tab-delimited file.
+
+        Parameters
+        ----------
+        file_path : str
+            A qualified path to write a tab-delimited version of the
+            Samplemap dataframe.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.df_smaps.to_csv(file_path, sep='\t', index=False)
         md5 = self.__calc_file_md5(file_path=file_path)
         md5_path = file_path + '.MD5'
@@ -530,17 +730,44 @@ class Samplemap:
         return
 
     def copy_df(self: Self) -> DataFrame:
-        """Return a copy of the dataframe from the Samplemap class."""
+        """Return a copy of the dataframe from the Samplemap class.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+
+        DataFrame
+            Returns a copy of the Samplemap dataframe.
+        """
         return self.df_smaps.copy()
 
     def copy_samplemaps(self: Self, outdir: str) -> None:
         """Copy original samplemaps to the output directory.
 
+        Parameters
+        ----------
+        outdir : str
+            A qualified path to copy all of the original Samplemap.csv
+            files as stored in the Samplemap object.
+
         Raises
         ------
-        IsADirectoryError : Outdir directory does not exist.
+        IsADirectoryError
+            Outdir directory does not exist.
 
-        FileNotFoundError : Samplemap file does not exist.
+        FileNotFoundError
+            Samplemap file does not exist.
+
+        Returns
+        -------
+        None
         """
         if Path(outdir).is_dir() is False:
             raise IsADirectoryError(

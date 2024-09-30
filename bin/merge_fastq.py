@@ -168,7 +168,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 # MAIN ########################################################################
 
 if __name__ == '__main__':
-    VERSION = '0.0.40'
+    VERSION = '0.0.41'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     )
 
     # Proceed creating FASTQ merge commands mediated by LSF bsub jobs,
-    # one job per sample.
+    # one job per sample. We will also perform read count evaluations.
 
     merge_fastq.setup_output_dirs()
     rename_samples.copy_rename_file(outdir=args.outdir)

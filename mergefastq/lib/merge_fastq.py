@@ -17,10 +17,121 @@ import gzip
 
 
 class MergeFastq:
+    """A class for merging split FASTQ provided by GTAC@MGI.
+
+    This class handles merging split FASTQ files as provided provided by
+    GTAC@MGI. We will also (potentially) rename the samples once merged.
+    Sample mappings are based on the original Samplemap.csv files
+    provided alongside the FASTQ files. Every unique sample will resolve
+    to a pair (R1 & R2) of FASTQ files. We will also manually perform an
+    independent read count review of each FASTQ file. Merging/counting
+    commands will be executed in LSF jobs using compute1 at WashU.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Arguments for merging FASTQ files as provided by argparse.
+
+    rename : RenameSamples
+        A RenameSamples object from the the mergefastq package.
+
+    samplemap : Samplemap
+        A post-concatenation Samplemap object from the mergefastq
+        package.
+
+    Attributes
+    ----------
+    copy_cmds : dict
+        A dictionary of sample names and associated (lists) of shell
+        commands for "copy" type FASTQ.
+
+    copy_jobs : list
+        A list of mergefastq.Bsub objects for running the commands for
+        "copy" type FASTQ.
+
+    dest_fq_index : dict
+        A dictionary of sample names and associated pairs of R1 & R2
+        destination file name paths.
+
+    log_dir_path : Path
+        A pathlib.Path object for the path to write the LSF shell
+        commands, etc.
+
+    merge_cmds : dict
+        A dictionary of sample names and associated (lists) of shell
+        commands for "merge" type FASTQ.
+
+    merge_copy_ids : set
+        The full, unique set of sample names that are of "merge" FASTQ
+        type.
+
+    merge_jobs : list
+        A list of mergefastq.Bsub objects for running the commands for
+        "merge" type FASTQ.
+
+    sample_dir : dict
+        A dictionary of sample names and associated output directories
+        to write merged FASTQ files. Parent directories are "old" sample
+        names whereas the merged files will use "new" sample names.
+
+    samplemap_merged : DataFrame
+        A post-concatenation samplemap object as provide by the
+        Samplemap class.
+
+    single_copy_ids : set
+        The full, unique set of sample names that are of "copy" FASTQ
+        type.
+
+    Methods
+    -------
+    launch_lsf_jobs()
+        Launch the copy and merge LSF jobs.
+
+    prepare_lsf_cmds()
+        Prepare the LSF jobs for merging FASTQ commands.
+
+    setup_output_dirs()
+        Setup all of the sample output directories.
+
+    write_df()
+        Write the merged FASTQ dataframe to a tab-delimited file.
+
+    Examples
+    --------
+    merge_fastq = mergefastq.MergeFastq(
+        args=args,
+        rename=rename_samples,
+        samplemap=samplemap
+    )
+    merge_fastq.setup_output_dirs()
+    merge_fastq.prepare_lsf_cmds()
+    merge_fastq.launch_lsf_jobs()
+    """
 
     def __init__(self: Self, args: argparse.Namespace, rename: RenameSamples,
                  samplemap: Samplemap) -> None:
-        """Construct the class."""
+        """Construct the class.
+
+        Parameters
+        ----------
+        args : argparse.Namespace
+            Arguments for merging FASTQ files as provided by argparse.
+
+        rename : RenameSamples
+            A RenameSamples object from the the mergefastq package.
+
+        samplemap : Samplemap
+            A post-concatenation Samplemap object from the mergefastq
+            package.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.args = args
         self.rename = rename
         self.samplemap = samplemap
@@ -49,9 +160,18 @@ class MergeFastq:
         original sample name. Samples with more these attributes will
         require merging of FASTQ files.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        ValueError : FASTQ copy type counts differ.
+        ValueError
+            FASTQ copy type counts differ.
+
+        Returns
+        -------
+        None
         """
         df = self.samplemap.copy_df()
         dfg = df.groupby('sample_name')
@@ -89,23 +209,38 @@ class MergeFastq:
         also count the number of reads in the FASTQ file and write a
         corresponding "counts" file.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        ValueError : Copy type should only have 2 associated FASTQ files.
+        ValueError
+            Copy type should only have 2 associated FASTQ files.
 
-        ValueError : R1 and R2 index sequences do not match.
+        ValueError
+            R1 and R2 index sequences do not match.
 
-        ValueError : R1 and R2 flow cell ids do not match.
+        ValueError
+            R1 and R2 flow cell ids do not match.
 
-        ValueError : R1 and R2 lane numbers do not match.
+        ValueError
+            R1 and R2 lane numbers do not match.
 
-        ValueError : Sample name should not be duplicated in FASTQ
-                     index.
+        ValueError
+            Sample name should not be duplicated in FASTQ index.
 
-        ValueError : FASTQ comp or decomp file not found.
+        ValueError
+            FASTQ R1 comp or decomp file not found.
+
+        ValueError
+            FASTQ R2 comp or decomp file not found.
+
+        Returns
+        -------
+        None
         """
         df_smaps = self.samplemap.copy_df()
-        # TODO: Is revised sample name the appropriate key?
         dfg_ids = df_smaps.groupby('sample_name')
         for sample_name in self.single_copy_ids:
             df = dfg_ids.get_group(sample_name)
@@ -177,7 +312,7 @@ class MergeFastq:
                     src_r1_fq_eval = src_r1_fq[:-3]
                 elif Path(src_r1_fq[:-3]).is_file() is False:
                     raise FileNotFoundError(
-                        'FASTQ comp or decomp file not found.',
+                        'FASTQ R1 comp or decomp file not found.',
                         src_r1_fq
                     )
 
@@ -188,7 +323,7 @@ class MergeFastq:
                     src_r2_fq_eval = src_r2_fq[:-3]
                 elif Path(src_r2_fq[:-3]).is_file() is False:
                     raise FileNotFoundError(
-                        'FASTQ comp or decomp file not found.',
+                        'FASTQ R2 comp or decomp file not found.',
                         src_r2_fq
                     )
 
@@ -267,21 +402,31 @@ class MergeFastq:
         by flowcell id should be able to keep the ordering the same
         between R1 and R2 files.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        ValueError : Merge-samples should all have the same index
-                     sequence.
+        ValueError
+            Merge-samples should all have the same index sequence.
 
-        ValueError : Merge-samples sort order was not maintained.
+        ValueError
+            Merge-samples sort order was not maintained.
 
-        ValueError : Merge-samples revised sample names are not equal.
+        ValueError
+            Merge-samples revised sample names are not equal.
 
-        ValueError : Merge-samples revised names must be unique.
+        ValueError
+            Merge-samples revised names must be unique.
 
-        ValueError : FASTQ comp or decomp file not found.
+        ValueError
+            FASTQ R1 comp or decomp file not found.
+
+        ValueError
+            FASTQ R2 comp or decomp file not found.
         """
         df_smaps = self.samplemap.copy_df()
-        # TODO: Is revised sample name the appropriate key?
         dfg_ids = df_smaps.groupby('sample_name')
         for sample_name in self.merge_copy_ids:
             df = dfg_ids.get_group(sample_name)
@@ -361,7 +506,7 @@ class MergeFastq:
                         r1_fq_eval = r1_fq[:-3]
                     elif Path(r1_fq[:-3]).is_file() is False:
                         raise FileNotFoundError(
-                            'FASTQ comp or decomp file not found.',
+                            'FASTQ R1 comp or decomp file not found.',
                             r1_fq
                         )
                 with gzip.open(r1_fq_eval, 'r') as fhi:
@@ -381,7 +526,7 @@ class MergeFastq:
                         r2_fq_eval = r2_fq[:-3]
                     elif Path(r2_fq[:-3]).is_file() is False:
                         raise FileNotFoundError(
-                            'FASTQ comp or decomp file not found.',
+                            'FASTQ R2 comp or decomp file not found.',
                             r2_fq
                         )
                 with gzip.open(r2_fq_eval, 'r') as fhi:
@@ -396,9 +541,6 @@ class MergeFastq:
             # source FASTQ files, which complicates merging things. We
             # may have to copy and compress some of the source FASTQ
             # files prior to merging.
-
-            # FIXME: Not printing the 'cp' portion of the LSF commands
-            # for some reason...
 
             # R1 ##############################################################
 
@@ -468,13 +610,18 @@ class MergeFastq:
         throw an exception. We will update the MergeFastq object with
         the directories that we create.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        IsADirectoryError : The outdir directory already exists.
+        IsADirectoryError
+            The outdir directory already exists.
 
-        IsADirectoryError : LSF log dir already exists.
-
-        FileExistsError : File exists.
+        Returns
+        -------
+        None
         """
         if Path(self.args.outdir).is_dir() is True:
             raise IsADirectoryError(
@@ -503,7 +650,20 @@ class MergeFastq:
         return
 
     def prepare_lsf_cmds(self: Self) -> None:
-        """Prepare the LSF jobs for merging FASTQ commands."""
+        """Prepare the LSF jobs for merging FASTQ commands.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         log_dir = self.log_dir_path
         lsf_vols: dict = dict()
         for lsf_vol in self.args.lsf_vol:
@@ -577,8 +737,20 @@ class MergeFastq:
         the MergeFastq object. Both the copy and merge jobs will be
         launched, in succession. If the --lsf-dry argument is passed,
         all of the bsub jobs will be written to output, but they will
-        not be launched---i.e. a "dry run" of the pipeline; else, all
+        not be launched--i.e. a "dry run" of the pipeline; else, all
         jobs will be launched and submitted to the LSF queue.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
         """
         for copy_job in self.copy_jobs:
             copy_job.execute(dry=self.args.lsf_dry)
@@ -589,11 +761,21 @@ class MergeFastq:
     def __update_df_dest_fq(self: Self) -> None:
         """Update the destination FASTQ column in dataframe.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        ValueError : Sample name not in the destination FASTQ index.
+        ValueError
+            Sample name not in the destination FASTQ index.
 
-        ValueError : Destination FASTQ indexes lengths differ.
+        ValueError
+            Destination FASTQ indexes lengths differ.
+
+        Returns
+        -------
+        None
         """
         col_dest_fq_path: list = list()
         for i in self.samplemap_merged.index:
@@ -621,14 +803,42 @@ class MergeFastq:
         return
 
     def __calc_file_md5(self: Self, file_path: str) -> str:
-        """Returns the MD5 hash for a specified file."""
+        """Returns the MD5 hash for a specified file.
+
+        Parameters
+        ----------
+        file_path : str
+            A qualified file path for which to calculate the MD5 hash.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+            Returns a MD5 hash value for the supplied file.
+        """
         with open(file_path, 'rb') as fh:
             data = fh.read()
             md5sum = hashlib.md5(data).hexdigest()
         return md5sum
 
     def write_df(self: Self, file_path: str) -> None:
-        """Write the merged FASTQ dataframe to a tab-delimited file."""
+        """Write the merged FASTQ dataframe to a tab-delimited file.
+
+        Parameters
+        ----------
+        file_path : str
+            A qualified file path to write the merged dataframe.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.samplemap_merged.to_csv(file_path, sep='\t', index=False)
         md5 = self.__calc_file_md5(file_path=file_path)
         md5_path = file_path + '.MD5'
@@ -649,17 +859,27 @@ class MergeFastq:
         IMPORTANT: The read counts provided by this method are not the
         manual read counts performed in the MergeFastq LSF jobs.
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
-        ValueError : End pair counts column length does not match
-                     dataframe.
+        ValueError
+            End pair counts column length does not match dataframe.
 
-        ValueError : Sample counts column length does not match
-                     dataframe.
+        ValueError
+            Sample counts column length does not match dataframe.
 
-        ValueError : GTAC sample counts do not match for R1 & R2.
+        ValueError
+            GTAC sample counts do not match for R1 & R2.
 
-        ValueError : GTAC end pair counts do not match for R1 & R2.
+        ValueError
+            GTAC end pair counts do not match for R1 & R2.
+
+        Returns
+        -------
+        None
         """
         count_index: dict = dict()
         df = self.samplemap_merged.copy()

@@ -16,18 +16,55 @@ from pathlib import Path
 class RenameSamples:
     """A class for renaming FASTQ sample ids.
 
+    This class is used to import and interact with a --rename file. The
+    rename file is used to map old sample names to new ones, when the
+    associated FASTQ files are merged--see Samplemap and MergeFastq
+    classes for details on merging.
+
     Parameters
     ----------
     args : argparse.Namespace
         Arguments for merging FASTQ files as provided by argparse.
 
-    args.rename : STR
-        The path to the --rename file used to map samplemap sample names
-        to revised/renamed sample names.
+    Attributes
+    ----------
+    args : argparse.Namespace
+        Arguments for merging FASTQ files as provided by argparse.
+
+    df : DataFrame
+        A dataframe representation of an imported --rename file.
+
+    Methods
+    -------
+    copy_df() -> DataFrame
+        Return a copy of the dataframe from the RenameSamples class.
+
+    copy_rename_file(outdir)
+        Copy the rename file to another directory.
+
+    Examples
+    --------
+    rename_samples = RenameSamples(args=args)
+    df = rename_samples.copy_df()
+    df.copy_rename_file(outdir=outdir)
     """
 
     def __init__(self: Self, args: argparse.Namespace) -> None:
-        """Construct the class."""
+        """Construct the class.
+
+        Parameters
+        ----------
+        args : argparse.Namespace
+            Arguments for merging FASTQ files as provided by argparse.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.args = args
         self.__populate_df()
         return
@@ -42,6 +79,10 @@ class RenameSamples:
             2. revised_sample_id
             3. comments
 
+        Parameters
+        ----------
+        None
+
         Raises
         ------
         ValueError : Input file column names are incorrect.
@@ -54,6 +95,10 @@ class RenameSamples:
         ValueError : The revised_sample_id column values are not unique.
 
         ValueError : Samplemap to revised id is not one-to-one.
+
+        Returns
+        -------
+        None
         """
         self.df = pd.read_csv(self.args.rename, sep='\t')
 
@@ -100,15 +145,38 @@ class RenameSamples:
         return
 
     def copy_df(self: Self) -> DataFrame:
-        """Return a copy of the dataframe from the RenameSamples class."""
+        """Return a copy of the dataframe from the RenameSamples class.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        DataFrame
+            Returns a copy of the RenameSamples Pandas dataframe.
+        """
         return self.df.copy()
 
     def copy_rename_file(self: Self, outdir: str) -> None:
         """Copy the rename file to another directory.
 
+        Parameters
+        ----------
+        outdir : str
+            A qualified path to copy the source --rename file.
+
         Raises
         ------
         IsADirectoryError : Outdir directory does not exist.
+
+        Returns
+        -------
+        None
         """
         if Path(outdir).is_dir() is False:
             raise IsADirectoryError(
