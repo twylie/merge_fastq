@@ -400,6 +400,8 @@ class MergeFastq:
             # FIXME: Not printing the 'cp' portion of the LSF commands
             # for some reason...
 
+            # R1 ##############################################################
+
             r1_merge_cmds: list = list()
             tmp_r1: set = set()
             r1_cat_order: list = list()
@@ -422,7 +424,10 @@ class MergeFastq:
             r1_merge_cmds.append(cmd)
             if tmp_r1:
                 for tmp_file in tmp_r1:
-                    r1_merge_cmds.append(f'rm {tmp_file}')
+                    rm_file = str(tmp_file.resolve()) + '.gz'
+                    r1_merge_cmds.append(f'rm {rm_file}')
+
+            # R2 ##############################################################
 
             r2_merge_cmds: list = list()
             tmp_r2: set = set()
@@ -446,7 +451,8 @@ class MergeFastq:
             r2_merge_cmds.append(cmd)
             if tmp_r2:
                 for tmp_file in tmp_r2:
-                    r2_merge_cmds.append(f'rm {tmp_file}')
+                    rm_file = str(tmp_file.resolve()) + '.gz'
+                    r2_merge_cmds.append(f'rm {rm_file}')
 
             self.merge_cmds.update({
                 sample_name: (r1_merge_cmds, r2_merge_cmds)
