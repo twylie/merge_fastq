@@ -23,7 +23,22 @@ from pathlib import Path
 # FUNCTIONS ###################################################################
 
 def collect_cli_arguments(version: str) -> argparse.Namespace:
-    """Collect the command line arguments."""
+    """Collect the command line arguments.
+
+    Parameters
+    ----------
+    version : str
+        A version id in semantic version format.
+
+    Raises
+    ------
+    None
+
+    Returns
+    -------
+    argparse.Namespace
+        Returns an argparse object with argument information.
+    """
     parser = argparse.ArgumentParser(
         description=('Merge FASTQ files at sample-level.'),
         prog='merge_fastq',
@@ -145,11 +160,22 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
     We can perform a few simple evaluations on reagent input files and
     directories prior to moving forward with downstream functions.
 
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Arguments object as provided by argparse.
+
     Raises
     ------
-    FileNotFoundError : The --rename input file does not exist.
+    FileNotFoundError
+        The --rename input file does not exist.
 
-    FileNotFoundError : A --samplemap input file does not exist.
+    FileNotFoundError
+        A --samplemap input file does not exist.
+
+    Returns
+    -------
+    None
     """
     if Path(args.rename).is_file() is False:
         raise FileNotFoundError(
@@ -168,7 +194,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 # MAIN ########################################################################
 
 if __name__ == '__main__':
-    VERSION = '0.0.41'
+    VERSION = '0.0.42'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
