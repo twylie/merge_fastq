@@ -1,3 +1,5 @@
+#!/usr/bin/python3.10
+
 # Project     : merge_fastq
 # File Name   : merge_fastq.py
 # Description : Main script for merging FASTQ files by project.
@@ -194,7 +196,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 # MAIN ########################################################################
 
 if __name__ == '__main__':
-    VERSION = '0.0.42'
+    VERSION = '0.0.43-alpha'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
