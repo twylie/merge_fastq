@@ -14,13 +14,12 @@ from pathlib import Path
 import hashlib
 
 
-class ReadCounts:
+class ReadCountsGtac:
     """A class for read count evaluation.
 
     This class provides methods for calculating and evaluating FASTQ
-    file read counts. We will handle both (1) read counts as provided by
-    GTAC@MGI (see Samplemap class) and (2) independent read counts (see
-    MergeFastq class).
+    file read counts. We will handle read counts as provided by GTAC@MGI
+    (see Samplemap class).
 
     Parameters
     ----------
@@ -67,7 +66,7 @@ class ReadCounts:
 
     Examples
     --------
-    read_counts = ReadCounts(
+    read_counts = ReadCountsGtac(
         args=args,
         merged_tsv=merged_tsv
     )
