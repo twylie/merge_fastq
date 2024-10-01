@@ -488,6 +488,7 @@ class Samplemap:
         for i in self.smaps:
             dfs.append(self.smaps[i]['df'])
         self.df_smaps = pd.concat(dfs).reset_index(drop=True)
+        self.df_smaps['project'] = self.args.project
         return
 
     def __parse_samplemaps(self: Self) -> None:
