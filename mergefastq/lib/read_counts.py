@@ -8,6 +8,7 @@
 
 import argparse
 import pandas as pd  # type: ignore
+from pandas import DataFrame
 from typing_extensions import Self
 from pathlib import Path
 import hashlib
@@ -98,6 +99,9 @@ class ReadCounts:
         """
         self.args = args
         self.merged_tsv = merged_tsv
+        self.df_gtac_seqcov: DataFrame = DataFrame()
+        self.df_merged: DataFrame = DataFrame()
+        self.target_counts: tuple = tuple()
         self.__set_target_coverages()
         self.__populate_df()
         self.target_min_perct = 80
@@ -175,19 +179,36 @@ class ReadCounts:
     def calc_gtac_read_coverage(self: Self) -> None:
         """Calculates the GTAC sample read count sequence throughput.
 
+        Calculations are based on the original FASTQ read counts
+        provided by GTAC@MGI in accompanying Samplemap.csv files. We
+        calculate the percent of sequence throughput against a set of
+        predefined target read throughput values--see
+        __set_target_coverages() for details. Essentially:
+
+            percent = (sample_counts / target_counts) * 100
+
+        A minimum percent of coverage defines a pass/fail state at the
+        sample read count level, set by the self.target_min_perct value.
+
         Parameters
         ----------
         None
 
         Raises
         ------
-        None
+        ValueError
+            Read counts differ for R1 and R2 columns.
+
+        ValueError
+            Read count columns vary in length.
+
+        ValueError
+            R1 and R2 read count sum differ froms sample count.
 
         Returns
         -------
         None
         """
-        # FIXME: Needs evaluations throughout.
         df = self.df_merged.copy()
         dfg = df.groupby('revised_sample_name')
         col_sample_name: list = list()
@@ -196,6 +217,7 @@ class ReadCounts:
         col_sample_counts: list = list()
         col_target_min_perct: list = list()
         target_cols: dict = dict()
+
         for i, sample_name in enumerate(dfg.groups):
             col_sample_name.append(sample_name)
             col_target_min_perct.append(self.target_min_perct)
@@ -229,31 +251,61 @@ class ReadCounts:
                 target_cols[i]['col_is_pass_perct_target'].append(
                     is_passed_perct_target
                 )
+
+        if (col_r1_counts != col_r2_counts) is True:
+            raise ValueError('Read counts differ for R1 and R2 columns.')
+
+        if (
+            len(col_sample_name) ==
+            len(col_r1_counts) ==
+            len(col_r2_counts) ==
+            len(col_sample_counts) ==
+            len(col_target_min_perct)
+        ) is False:
+            raise ValueError('Read count columns vary in length.')
+
+        df_tmp = pd.DataFrame({
+            'r1_counts': col_r1_counts,
+            'r2_counts': col_r2_counts,
+            'sample_counts': col_sample_counts
+        })
+        df_tmp['sum'] = df_tmp['r1_counts'] + df_tmp['r2_counts']
+        if list(df_tmp['sample_counts']) == list(df_tmp['sum']) is False:
+            raise ValueError(
+                'R1 and R2 read count sum differ froms sample count.'
+            )
+
         df_seqcov = pd.DataFrame()
         df_seqcov['sample_name'] = col_sample_name
         df_seqcov['R1_read_counts'] = col_r1_counts
         df_seqcov['R2_read_counts'] = col_r2_counts
         df_seqcov['sample_read_counts'] = col_sample_counts
         df_seqcov['min_target_perct_cov'] = col_target_min_perct
+
         collection: dict = dict()
         for i, target_count in enumerate(target_cols[0]['col_target_counts']):
+            # We may use the first entry to setup the target labels for
+            # all of the entries in the collection.
             collection[i] = {
                 'perct_label': f'perct_of_{target_count}',
                 'col_perct_of_target': list(),
                 'is_passed_label': f'is_pased_{target_count}',
                 'is_pass_perct_target': list()
             }
+
         for i in sorted(collection.keys()):
-            for sample in sorted(target_cols):
-                perct = target_cols[sample]['col_perct_of_target'][i]
-                is_pass = target_cols[sample]['col_is_pass_perct_target'][i]
+            for sample_i in sorted(target_cols):
+                perct = target_cols[sample_i]['col_perct_of_target'][i]
+                is_pass = target_cols[sample_i]['col_is_pass_perct_target'][i]
                 collection[i]['col_perct_of_target'].append(perct)
                 collection[i]['is_pass_perct_target'].append(is_pass)
+
         for i in sorted(collection):
             perct_label = collection[i]['perct_label']
             is_passed_label = collection[i]['is_passed_label']
             df_seqcov[perct_label] = collection[i]['col_perct_of_target']
             df_seqcov[is_passed_label] = collection[i]['is_pass_perct_target']
+
         self.df_gtac_seqcov = df_seqcov
         return
 

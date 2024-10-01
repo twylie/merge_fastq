@@ -97,6 +97,7 @@ class Samplemap:
         self.rename = rename
         self.smaps: dict = dict()
         self.smap_paths: list = list()
+        self.df_smaps: DataFrame = DataFrame()
         self.__parse_samplemaps()
         self.__eval_origin_fastq()
         self.__eval_smap_seq_indexes()
@@ -485,7 +486,7 @@ class Samplemap:
         None
         """
         dfs: list = list()
-        for i in self.smaps:
+        for i in sorted(self.smaps.keys()):
             dfs.append(self.smaps[i]['df'])
         self.df_smaps = pd.concat(dfs).reset_index(drop=True)
         self.df_smaps['project'] = self.args.project
@@ -493,6 +494,10 @@ class Samplemap:
 
     def __parse_samplemaps(self: Self) -> None:
         """Parse all of the input Samplemap files.
+
+        We will type and parse all of the original Samplemap.csv files.
+        A concatenated version of all samplemaps will be created for
+        downstream review.
 
         Parameters
         ----------
@@ -670,12 +675,8 @@ class Samplemap:
         -------
         None
         """
-        # TODO: This section is very important in that the old sample
-        # ids and the new sample ids must match correctly. Review the
-        # logic and make sure there can be no mistakes for the renaming
-        # portion of the code.
-        df_smaps = self.df_smaps.copy()
         df_rename = self.rename.copy_df()
+        df_smaps = self.df_smaps.copy()
         dfg = df_rename.groupby('samplemap_sample_id')
         revised_sample_id_cols: list = list()
         for i in df_smaps.index:
@@ -752,6 +753,10 @@ class Samplemap:
     def copy_samplemaps(self: Self, outdir: str) -> None:
         """Copy original samplemaps to the output directory.
 
+        We will copy the original source FASTQ files for reference.
+        Also, we will copy the post-concatenation samplemap dataframe
+        for reference.
+
         Parameters
         ----------
         outdir : str
@@ -788,6 +793,8 @@ class Samplemap:
                     dest_dir.mkdir(parents=True, exist_ok=False)
                     dest = dest_dir / 'Samplemap.csv'
                     dest.write_text(src.read_text())
+            dest_all = Path(outdir) / 'src_samplemaps/all_samplemaps.tsv'
+            self.write_df(file_path=str(dest_all.resolve()))
         return
 
 # __END__

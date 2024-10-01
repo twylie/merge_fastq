@@ -45,10 +45,6 @@ class MergeFastq:
         A dictionary of sample names and associated (lists) of shell
         commands for "copy" type FASTQ.
 
-    copy_jobs : list
-        A list of mergefastq.Bsub objects for running the commands for
-        "copy" type FASTQ.
-
     dest_fq_index : dict
         A dictionary of sample names and associated pairs of R1 & R2
         destination file name paths.
@@ -65,9 +61,9 @@ class MergeFastq:
         The full, unique set of sample names that are of "merge" FASTQ
         type.
 
-    merge_jobs : list
-        A list of mergefastq.Bsub objects for running the commands for
-        "merge" type FASTQ.
+    all_jobs : list
+        A list of Bsub objects for running the commands for "merge" and
+        "copy" type FASTQ commands.
 
     sample_dir : dict
         A dictionary of sample names and associated output directories
@@ -141,8 +137,9 @@ class MergeFastq:
         self.merge_cmds: dict = dict()
         self.log_dir_path: Path = Path()
         self.sample_dir: dict = dict()
-        self.copy_jobs: list = list()
-        self.merge_jobs: list = list()
+        self.all_jobs: list = list()
+        self.single_copy_ids: set = set()
+        self.merge_copy_ids: set = set()
         self.__parse_fastq_copy_types()
         self.__setup_copy_cmds()
         self.__setup_merge_cmds()
@@ -158,7 +155,8 @@ class MergeFastq:
         sample has 2 FASTQ (R1 & R2) and 1 associated flowcell, we don't
         need to merge the FASTQ, but rather simply copy them using the
         original sample name. Samples with more these attributes will
-        require merging of FASTQ files.
+        require merging of FASTQ files. Therefore, types fall into
+        "copy" or "merge" categories.
 
         Parameters
         ----------
@@ -185,6 +183,7 @@ class MergeFastq:
                 single_copy_ids.add(sample_name)
             else:
                 merge_copy_ids.add(sample_name)
+        # i = total unique sample names
         if (len(single_copy_ids) + len(merge_copy_ids)) != i:
             raise ValueError('FASTQ copy type counts differ.')
         else:
@@ -542,8 +541,6 @@ class MergeFastq:
             # may have to copy and compress some of the source FASTQ
             # files prior to merging.
 
-            # R1 ##############################################################
-
             r1_merge_cmds: list = list()
             tmp_r1: set = set()
             r1_cat_order: list = list()
@@ -568,8 +565,6 @@ class MergeFastq:
                 for tmp_file in tmp_r1:
                     rm_file = str(tmp_file.resolve()) + '.gz'
                     r1_merge_cmds.append(f'rm {rm_file}')
-
-            # R2 ##############################################################
 
             r2_merge_cmds: list = list()
             tmp_r2: set = set()
@@ -652,6 +647,10 @@ class MergeFastq:
     def prepare_lsf_cmds(self: Self) -> None:
         """Prepare the LSF jobs for merging FASTQ commands.
 
+        Each unique sample gets its own set of shell commands and
+        associated LSF jobs information. We will be using the Bsub class
+        to formulate LSF jobs to run at WashU.
+
         Parameters
         ----------
         None
@@ -671,11 +670,9 @@ class MergeFastq:
                 lsf_vols.update({lsf_vol[:-1]: lsf_vol[:-1]})
             else:
                 lsf_vols.update({lsf_vol: lsf_vol})
-
-        # Single copy commands.
-
-        for i, sample_name in enumerate(self.copy_cmds, 1):
-            r1_cmds, r2_cmds = self.copy_cmds[sample_name]
+        all_cmds = self.copy_cmds | self.merge_cmds
+        for i, sample_name in enumerate(all_cmds, 1):
+            r1_cmds, r2_cmds = all_cmds[sample_name]
             cmds = r1_cmds + r2_cmds
             error_log = f'{i}_merge_fastq_bsub.err'
             cmd_name = f'{i}_merge_fastq.sh'
@@ -684,7 +681,7 @@ class MergeFastq:
             config = f'{i}_merge_fastq_bsub.yaml'
             bsub_cmd = f'{i}_merge_fastq_bsub.sh'
             bsub_log_dir = str(log_dir.resolve())
-            copy_lsf_job = mergefastq.Bsub(
+            lsf_job = mergefastq.Bsub(
                 log_dir=bsub_log_dir,
                 docker_volumes=lsf_vols,
                 docker_image=self.args.lsf_image,
@@ -698,36 +695,7 @@ class MergeFastq:
                 bsub_command_name=bsub_cmd,
                 job_name=job_name
             )
-            self.copy_jobs.append(copy_lsf_job)
-
-        # Merging commands.
-
-        next_i = i + 1
-        for i, sample_name in enumerate(self.merge_cmds, next_i):
-            r1_cmds, r2_cmds = self.merge_cmds[sample_name]
-            cmds = r1_cmds + r2_cmds
-            error_log = f'{i}_merge_fastq_bsub.err'
-            cmd_name = f'{i}_merge_fastq.sh'
-            out_log = f'{i}_merge_fastq_bsub.out'
-            job_name = f'{i}_merge_fastq'
-            config = f'{i}_merge_fastq_bsub.yaml'
-            bsub_cmd = f'{i}_merge_fastq_bsub.sh'
-            bsub_log_dir = str(log_dir.resolve())
-            merge_lsf_job = mergefastq.Bsub(
-                log_dir=bsub_log_dir,
-                docker_volumes=lsf_vols,
-                docker_image=self.args.lsf_image,
-                group=self.args.lsf_group,
-                queue=self.args.lsf_queue,
-                command=cmds,
-                error_log=error_log,
-                output_log=out_log,
-                command_name=cmd_name,
-                config=config,
-                bsub_command_name=bsub_cmd,
-                job_name=job_name
-            )
-            self.merge_jobs.append(merge_lsf_job)
+            self.all_jobs.append(lsf_job)
         return
 
     def launch_lsf_jobs(self: Self) -> None:
@@ -752,14 +720,17 @@ class MergeFastq:
         -------
         None
         """
-        for copy_job in self.copy_jobs:
-            copy_job.execute(dry=self.args.lsf_dry)
-        for merge_job in self.merge_jobs:
-            merge_job.execute(dry=self.args.lsf_dry)
+        for job in self.all_jobs:
+            job.execute(dry=self.args.lsf_dry)
         return
 
     def __update_df_dest_fq(self: Self) -> None:
         """Update the destination FASTQ column in dataframe.
+
+        This method will add the destination FASTQ paths to the existing
+        merged dataframe. These paths are to the merged FASTQ files (R1
+        & R2) for a unique sample name. Destination sample names reflect
+        the RenameSamples id mappings.
 
         Parameters
         ----------
@@ -797,7 +768,7 @@ class MergeFastq:
                     sample_name
                 )
         if len(col_dest_fq_path) != len(self.samplemap_merged.index):
-            raise ValueError(' Destination FASTQ indexes lengths differ.')
+            raise ValueError('Destination FASTQ indexes lengths differ.')
         else:
             self.samplemap_merged['merged_fastq_path'] = col_dest_fq_path
         return

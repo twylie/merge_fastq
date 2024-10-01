@@ -66,6 +66,7 @@ class RenameSamples:
         None
         """
         self.args = args
+        self.df: DataFrame = DataFrame()
         self.__populate_df()
         return
 
@@ -85,16 +86,20 @@ class RenameSamples:
 
         Raises
         ------
-        ValueError : Input file column names are incorrect.
+        ValueError
+            Input file column names are incorrect.
 
-        ValueError : Input file contains no values.
+        ValueError
+            Input file contains no values.
 
-        ValueError : The samplemap_sample_id column values are not
-                     unique.
+        ValueError
+            The samplemap_sample_id column values are not unique.
 
-        ValueError : The revised_sample_id column values are not unique.
+        ValueError
+            The revised_sample_id column values are not unique.
 
-        ValueError : Samplemap to revised id is not one-to-one.
+        ValueError
+            Samplemap to revised id is not one-to-one.
 
         Returns
         -------
@@ -158,7 +163,7 @@ class RenameSamples:
         Returns
         -------
         DataFrame
-            Returns a copy of the RenameSamples Pandas dataframe.
+            Returns a copy of the RenameSamples dataframe.
         """
         return self.df.copy()
 
@@ -172,7 +177,8 @@ class RenameSamples:
 
         Raises
         ------
-        IsADirectoryError : Outdir directory does not exist.
+        IsADirectoryError
+            Outdir directory does not exist.
 
         Returns
         -------
