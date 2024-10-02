@@ -100,10 +100,10 @@ class ReadCountsGtac:
         self.merged_tsv = merged_tsv
         self.df_gtac_seqcov: DataFrame = DataFrame()
         self.df_merged: DataFrame = DataFrame()
+        self.target_min_perct = 80
         self.target_counts: tuple = tuple()
         self.__set_target_coverages()
         self.__populate_df()
-        self.target_min_perct = 80
         return
 
     def __populate_df(self: Self) -> None:
@@ -251,7 +251,7 @@ class ReadCountsGtac:
                     is_passed_perct_target
                 )
 
-        if (col_r1_counts != col_r2_counts) is True:
+        if (col_r1_counts == col_r2_counts) is False:
             raise ValueError('Read counts differ for R1 and R2 columns.')
 
         if (
@@ -335,7 +335,7 @@ class ReadCountsGtac:
         Parameters
         ----------
         file_path : str
-            A qualified file path to write the read counts dataframe
+            A qualified file path to write the read counts dataframe.
 
         Raises
         ------

@@ -143,7 +143,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 # MAIN ########################################################################
 
 if __name__ == '__main__':
-    VERSION = '0.0.1-alpha'
+    VERSION = '0.0.7-alpha'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
@@ -159,9 +159,6 @@ if __name__ == '__main__':
     # Parse the input reagent files and create objects for downstream
     # processing.
 
-    read_counts = mergefastq.ReadCountsGtac(
-        args=args,
-        merged_tsv=args.merged_samplemap
-    )
+    read_counts = mergefastq.ReadCountsSource(args=args)
 
 # __END__
