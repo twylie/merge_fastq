@@ -9,6 +9,7 @@
 import argparse
 import pandas as pd  # type: ignore
 from pandas import DataFrame
+import numpy as np
 from typing_extensions import Self
 from pathlib import Path
 import hashlib
@@ -37,6 +38,7 @@ class ReadCountsSource():
         self.gtac_counts = self.args.gtac_counts
         self.df_merged: DataFrame = DataFrame()
         self.df_src_seqcov: DataFrame = DataFrame()
+        self.df_comp: DataFrame = DataFrame()
         self.target_min_perct = 80
         self.target_counts: tuple = tuple()
         self.__set_target_coverages()
@@ -47,6 +49,8 @@ class ReadCountsSource():
         src_tsv = Path(self.args.outdir) / 'src_read_counts.tsv'
         self.__write_src_counts_df(file_path=str(src_tsv.resolve()))
         self.__compare_gtac_to_src_counts()
+        report_path = Path(self.args.outdir) / 'read_count_comparisons.tsv'
+        self.__write_comp_counts_df(file_path=str(report_path.resolve()))
         return
 
     def __set_target_coverages(self: Self) -> None:
@@ -162,7 +166,34 @@ class ReadCountsSource():
         return
 
     def __col_src_sample_reads(self: Self) -> None:
-        """Update the source sample counts in the dataframe."""
+        """Update the source sample counts in the dataframe.
+
+        We will update the merged, sample-level read counts based on the
+        independent, manual FASTQ read count review. The sample read
+        counts includes both the R1 and R2 FASTQ file read counts.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        ValueError
+            Odd length of reads pairs.
+
+        ValueError
+            Sample counts column length does not match dataframe.
+
+        ValueError
+            Source sample counts do not match for R1 & R2.
+
+        ValueError
+            Source end pair counts do not match for R1 & R2.
+
+        Returns
+        -------
+        None
+        """
         df = self.df_merged.copy()
 
         count_index: dict = dict()
@@ -221,12 +252,57 @@ class ReadCountsSource():
         return
 
     def __update_merged_df_read_counts(self: Self) -> None:
-        """Update the source read counts in the dataframe."""
+        """Update the source read counts in the dataframe.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         self.__col_src_end_pair_reads()
         self.__col_src_sample_reads()
         return
 
     def __calc_src_read_coverage(self: Self) -> None:
+        """Calculate the source sequencing read coverage values.
+
+        Calculations are based on the independent, manual FASTQ read
+        counts provided by the sample_name.fastq.gz.counts files
+        generated during MergeFastq processing. We calculate the percent
+        of sequence throughput against a set of predefined target read
+        throughput values--see __set_target_coverages() for details.
+        Essentially:
+
+            percent = (sample_counts / target_counts) * 100
+
+        A minimum percent of coverage defines a pass/fail state at the
+        sample read count level, set by the self.target_min_perct value.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        ValueError
+            Read counts differ for R1 and R2 columns.
+
+        ValueError
+            Read count columns vary in length.
+
+        ValueError
+            R1 and R2 read count sum differ froms sample count.
+
+        Return
+        ------
+        """
         df = self.df_merged.copy()
         dfg = df.groupby('revised_sample_name')
         col_sample_name: list = list()
@@ -371,6 +447,30 @@ class ReadCountsSource():
             fh.write(f'MD5 ({file_path}) = {md5}\n')
         return
 
+    def __write_comp_counts_df(self: Self, file_path: str) -> None:
+        """Write the count comparisons dataframe to a tab-delimited file.
+
+        Parameters
+        ----------
+        file_path : str
+            A qualified file path to write the read counts comparison
+            dataframe.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
+        self.df_comp.to_csv(file_path, sep='\t', index=False)
+        md5 = self.__calc_file_md5(file_path=file_path)
+        md5_path = file_path + '.MD5'
+        with open(md5_path, 'w') as fh:
+            fh.write(f'MD5 ({file_path}) = {md5}\n')
+        return
+
     def __populate_gtac_df(self: Self) -> None:
         """Populate the GTAC FASTQ dataframe.
 
@@ -398,38 +498,93 @@ class ReadCountsSource():
         return
 
     def __compare_gtac_to_src_counts(self: Self) -> None:
-        """Compare the read counts for source and gtac reports."""
+        """Compare the read counts for source and GTAC reports.
+
+        Given that we have the two read count throughput tables
+        (gtac_read_counts.tsv and src_read_counts.tsv), we may compare
+        the GTAC-based FASTQ read counts to those calculated by
+        independent, manual review. If there are any differences in read
+        counts (i.e. R1 counts, R2 counts, and sample-level counts)
+        between the two tables will be highlighted in a subsequent
+        comparison report file.
+
+         The comparison report file's fields will be blank if there are
+        differences between the read count tables. Differences will be
+        displayed as GTAC:SRC count pairs. The is_no_difference column
+        is a boolean field indicating if there are any differences
+        across the count fields for the sample.
+
+        Example Report
+        --------------
+        1. sample_name        : STR
+        2  R1_read_counts     : STR | NaN
+        3. R2_read_counts     : STR | NaN
+        4. sample_read_counts : STR | NaN
+        5. is_no_difference   : BOOL
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
         df_src = self.df_src_seqcov.copy()
         df_gtac = self.df_gtac_counts.copy()
         df_eval = df_src == df_gtac
+        col_sample_names: list = list()
+        col_r1_read_counts: list = list()
+        col_r2_read_counts: list = list()
+        col_sample_read_counts: list = list()
 
-        r1_false: list = list()
-        false_i = df_eval.loc[df_eval['R1_read_counts']].index
-        if len(false_i) >= 1:
-            r1_false += list(false_i)
+        for i in df_eval.index:
+            sample_name = df_gtac.loc[i]['sample_name']
+            col_sample_names.append(sample_name)
+            is_r1_same = bool(df_eval.loc[i]['R1_read_counts'])
+            is_r2_same = bool(df_eval.loc[i]['R2_read_counts'])
+            is_sample_same = bool(df_eval.loc[i]['sample_read_counts'])
+            if is_r1_same is False:
+                gtac_counts = df_gtac.loc[i]['R1_read_counts']
+                src_counts = df_src.loc[i]['R1_read_counts']
+                r1_comp = f'{gtac_counts}:{src_counts}'
+                col_r1_read_counts.append(r1_comp)
+            elif is_r1_same is True:
+                col_r1_read_counts.append(np.nan)
+            if is_r2_same is False:
+                gtac_counts = df_gtac.loc[i]['R2_read_counts']
+                src_counts = df_src.loc[i]['R2_read_counts']
+                r2_comp = f'{gtac_counts}:{src_counts}'
+                col_r2_read_counts.append(r2_comp)
+            elif is_r2_same is True:
+                col_r2_read_counts.append(np.nan)
+            if is_sample_same is False:
+                gtac_counts = df_gtac.loc[i]['sample_read_counts']
+                src_counts = df_src.loc[i]['sample_read_counts']
+                r2_comp = f'{gtac_counts}:{src_counts}'
+                col_sample_read_counts.append(r2_comp)
+            elif is_r2_same is True:
+                col_sample_read_counts.append(np.nan)
 
-        r2_false: list = list()
-        false_i = df_eval.loc[~df_eval['R2_read_counts']].index
-        if len(false_i) >= 1:
-            r2_false += list(false_i)
+        self.df_comp['sample_name'] = col_sample_names
+        self.df_comp['R1_read_counts'] = col_r1_read_counts
+        self.df_comp['R2_read_counts'] = col_r2_read_counts
+        self.df_comp['sample_read_counts'] = col_sample_read_counts
 
-        sample_false: list = list()
-        false_i = df_eval.loc[~df_eval['sample_read_counts']].index
-        if len(false_i) >= 1:
-            sample_false += list(false_i)
-
-        src_sample_names = df_src.loc[r1_false]['sample_name']
-        src_r1_counts = df_src.loc[r1_false]['R1_read_counts']
-        gtac_sample_names = df_gtac.loc[r1_false]['sample_name']
-        gtac_r1_counts = df_gtac.loc[r1_false]['R1_read_counts']
-        for i in zip(
-                src_sample_names,
-                src_r1_counts,
-                gtac_sample_names,
-                gtac_r1_counts
-        ):
-            aa, bb, cc, dd = i
-            print(f'R1_sample_counts: {aa} {bb} != {dd}')
+        col_bool: list = list()
+        for i in df_eval.index:
+            dfi = df_eval.loc[i][[
+                'R1_read_counts',
+                'R2_read_counts',
+                'sample_read_counts'
+            ]]
+            is_all_true = bool(dfi.all())
+            col_bool.append(is_all_true)
+        self.df_comp['is_no_difference'] = col_bool
         return
 
 # __END__
