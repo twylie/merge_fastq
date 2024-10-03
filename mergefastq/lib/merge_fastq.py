@@ -978,6 +978,7 @@ class MergeFastq:
                     'Sample name missing in copy commands keys.',
                     sample_name
                 )
+        self.samplemap_merged['merged_commands'] = col_merge_cmds
         return
 
 # __END__
