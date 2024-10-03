@@ -16,6 +16,59 @@ import hashlib
 
 
 class ReadCountsSource():
+    """A class for FASTQ sequence throughput evaluation.
+
+    This class provides methods for calculating and evaluating source
+    FASTQ file read counts. We will handle read counts as provided by
+    sample_name.fastq.gz.counts files, see MergeFastq class for details.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Arguments for merging FASTQ files as provided by argparse.
+
+    Attributes
+    ----------
+    args : argparse.Namespace
+        Arguments for merging FASTQ files as provided by argparse.
+
+    df_comp : DataFrame
+        A dataframe comparing GTAC FASTQ read counts to source FASTQ
+        read counts.
+
+    df_gtac_counts : DataFrame
+        A dataframe of GTAC FASTQ read counts.
+
+    df_merged : DataFrame
+        A dataframe of merged FASTQ file information.
+
+    df_src_seqcov : DataFrame
+        A dataframe of source FASTQ read counts and sequence coverage
+        metrics.
+
+    gtac_counts : str
+        A qualified path to the GTAC read counts file.
+
+    merged_samplemap : str
+        A qualified path to the merged FASTQ samplemap file.
+
+    target_counts : tuple
+        A tuple of values use to evaluate the expected read count
+        throughput of a given sample. Update this tuple to reduce or
+        expand the number of evaluations.
+
+    target_min_perct = int [80]
+        The minimum percent of target sequence throughput for a sample
+        to pass.
+
+    Methods
+    -------
+    None
+
+    Examples
+    --------
+    read_counts = ReadCountsSource(args=args)
+    """
 
     def __init__(self: Self, args: argparse.Namespace) -> None:
         """Construct the class.
@@ -39,6 +92,7 @@ class ReadCountsSource():
         self.df_merged: DataFrame = DataFrame()
         self.df_src_seqcov: DataFrame = DataFrame()
         self.df_comp: DataFrame = DataFrame()
+        self.df_gtac_counts: DataFrame = DataFrame()
         self.target_min_perct = 80
         self.target_counts: tuple = tuple()
         self.__set_target_coverages()
@@ -51,6 +105,8 @@ class ReadCountsSource():
         self.__compare_gtac_to_src_counts()
         report_path = Path(self.args.outdir) / 'read_count_comparisons.tsv'
         self.__write_comp_counts_df(file_path=str(report_path.resolve()))
+        from pprint import pprint
+        pprint(dir(self))
         return
 
     def __set_target_coverages(self: Self) -> None:
@@ -514,8 +570,8 @@ class ReadCountsSource():
         is a boolean field indicating if there are any differences
         across the count fields for the sample.
 
-        Example Report
-        --------------
+        REPORT FIELDS
+        -------------
         1. sample_name        : STR
         2  R1_read_counts     : STR | NaN
         3. R2_read_counts     : STR | NaN
@@ -528,7 +584,8 @@ class ReadCountsSource():
 
         Raises
         ------
-        None
+        ValueError
+            Read count columns vary in length.
 
         Returns
         -------
@@ -584,7 +641,17 @@ class ReadCountsSource():
             ]]
             is_all_true = bool(dfi.all())
             col_bool.append(is_all_true)
-        self.df_comp['is_no_difference'] = col_bool
+
+        if (
+                len(col_sample_names) ==
+                len(col_r1_read_counts) ==
+                len(col_r2_read_counts) ==
+                len(col_sample_read_counts) ==
+                len(col_bool)
+        ) is False:
+            raise ValueError('Read count columns vary in length.')
+        else:
+            self.df_comp['is_no_difference'] = col_bool
         return
 
 # __END__
