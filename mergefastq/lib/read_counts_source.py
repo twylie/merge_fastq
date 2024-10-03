@@ -341,7 +341,7 @@ class ReadCountsSource():
         throughput values--see __set_target_coverages() for details.
         Essentially:
 
-            percent = (sample_counts / target_counts) * 100
+            percent = ((sample_counts / 2) / target_counts) * 100
 
         A minimum percent of coverage defines a pass/fail state at the
         sample read count level, set by the self.target_min_perct value.
@@ -396,7 +396,7 @@ class ReadCountsSource():
             for target_counts in self.target_counts:
                 target_cols[i]['col_target_counts'].append(target_counts)
                 perct_of_target = round(
-                    (sample_counts / target_counts) * 100, 2
+                    ((sample_counts / 2) / target_counts) * 100, 2
                 )
                 target_cols[i]['col_perct_of_target'].append(perct_of_target)
                 if perct_of_target < self.target_min_perct:

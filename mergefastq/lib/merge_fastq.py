@@ -143,6 +143,7 @@ class MergeFastq:
         self.__parse_fastq_copy_types()
         self.__setup_copy_cmds()
         self.__setup_merge_cmds()
+        self.__update_df_cmds()
         self.__update_df_dest_fq()
         self.__update_df_read_counts()
         return
@@ -797,6 +798,16 @@ class MergeFastq:
     def write_df(self: Self, file_path: str) -> None:
         """Write the merged FASTQ dataframe to a tab-delimited file.
 
+        For reference, we will write the dataframe to disk as both plain
+        text and as a binary (pickle) file. The pickle file retains data
+        objects in the dataframe, whereas the text version does not.
+
+        Output Files
+        ------------
+        file.tsv
+        file.tsv.MD5
+        file.tsv.pickle
+
         Parameters
         ----------
         file_path : str
@@ -815,6 +826,9 @@ class MergeFastq:
         md5_path = file_path + '.MD5'
         with open(md5_path, 'w') as fh:
             fh.write(f'MD5 ({file_path}) = {md5}\n')
+        pickle = file_path + '.pickle'
+        self.samplemap_merged.to_pickle(pickle)
+        self.samplemap_merged_pkl = pickle
         return
 
     def __update_df_read_counts(self: Self) -> None:
@@ -905,6 +919,64 @@ class MergeFastq:
                     sample_name,
                     f'R1={r1_ep_counts}',
                     f'R2={r2_ep_counts}'
+                )
+        return
+
+    def __update_df_cmds(self: Self) -> None:
+        """Update the merged dataframe with merging commands.
+
+        We are storing the per-FASTQ merging commands as executed by the
+        Bsub class, for reference. These entries are useful for sanity
+        checks and archiving how the merged FASTQ files were created.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        ValueError
+            Unknown read number.
+
+        KeyError
+            Sample name missing in copy commands keys.
+
+        Returns
+        -------
+        None
+        """
+        df_merged = self.samplemap_merged.copy()
+        col_merge_cmds: list = list()
+        for i in df_merged.index:
+            df = df_merged.loc[i]
+            sample_name = df['sample_name']
+            read_number = df['read_number']
+            if sample_name in self.copy_cmds.keys():
+                r1_cmd, r2_cmd = self.copy_cmds[sample_name]
+                if read_number == 1:
+                    col_merge_cmds.append(r1_cmd)
+                elif read_number == 2:
+                    col_merge_cmds.append(r2_cmd)
+                else:
+                    raise ValueError(
+                        'Unknown read number.',
+                        read_number
+                    )
+            elif sample_name in self.merge_cmds.keys():
+                r1_cmd, r2_cmd = self.merge_cmds[sample_name]
+                if read_number == 1:
+                    col_merge_cmds.append(r1_cmd)
+                elif read_number == 2:
+                    col_merge_cmds.append(r2_cmd)
+                else:
+                    raise ValueError(
+                        'Unknown read number.',
+                        read_number
+                    )
+            else:
+                raise KeyError(
+                    'Sample name missing in copy commands keys.',
+                    sample_name
                 )
         return
 
