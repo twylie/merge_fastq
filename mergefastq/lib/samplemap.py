@@ -56,6 +56,9 @@ class Samplemap:
         'fastq_dir', 'df'). These are the representations prior to
         concatenation.
 
+    unique_sample_names_file : str
+        A file of unique (original) sorted sample names.
+
     Methods
     -------
     write_df(file_path)
@@ -98,6 +101,7 @@ class Samplemap:
         self.smaps: dict = dict()
         self.smap_paths: list = list()
         self.df_smaps: DataFrame = DataFrame()
+        self.sample_names_file: str = str()
         self.__parse_samplemaps()
         self.__eval_origin_fastq()
         self.__eval_smap_seq_indexes()
@@ -472,6 +476,10 @@ class Samplemap:
 
     def __concatenate_samplemaps(self: Self) -> None:
         """Concatenate all of the samplemap dataframes into one.
+
+        Make a concatenated dataframe of all of the user-supplied
+        Samplemap.csv files. Also, write an associated unique list of
+        (original) sorted sample names to a file for reference.
 
         Parameters
         ----------

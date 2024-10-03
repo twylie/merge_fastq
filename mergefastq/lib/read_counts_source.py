@@ -61,13 +61,19 @@ class ReadCountsSource():
         The minimum percent of target sequence throughput for a sample
         to pass.
 
+    report_path : str
+        Path to the comparison read counts report file.
+
     Methods
     -------
-    None
+    tell_comp_differences()
+        If there are differences between GTAC and source FASTQ read
+        counts, tell the user which differences are present per sample.
 
     Examples
     --------
     read_counts = ReadCountsSource(args=args)
+    read_counts.tell_comp_differences()
     """
 
     def __init__(self: Self, args: argparse.Namespace) -> None:
@@ -104,9 +110,8 @@ class ReadCountsSource():
         self.__write_src_counts_df(file_path=str(src_tsv.resolve()))
         self.__compare_gtac_to_src_counts()
         report_path = Path(self.args.outdir) / 'read_count_comparisons.tsv'
-        self.__write_comp_counts_df(file_path=str(report_path.resolve()))
-        from pprint import pprint
-        pprint(dir(self))
+        self.report_path = str(report_path.resolve())
+        self.__write_comp_counts_df(file_path=self.report_path)
         return
 
     def __set_target_coverages(self: Self) -> None:
@@ -652,6 +657,46 @@ class ReadCountsSource():
             raise ValueError('Read count columns vary in length.')
         else:
             self.df_comp['is_no_difference'] = col_bool
+        return
+
+    def tell_comp_differences(self: Self) -> None:
+        """Tell the user the comparison differences.
+
+        If there are differences between GTAC and source FASTQ read
+        counts, tell the user which differences are present per sample
+        using STDOUT.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        None
+        """
+        df = self.df_comp.copy()
+        if bool(df['is_no_difference'].all()) is True:
+            print('\nFINISHED:')
+            print('There are no differences between the GTAC and '
+                  'source read counts.')
+            print('\nOUTPUT:')
+            print(f'{self.report_path}\n')
+        else:
+            dfg = df.groupby('is_no_difference')
+            dfg_false = dfg.get_group(False)
+            print('\nFINISHED:')
+            print('Differences detected between the GTAC and source read '
+                  'counts.\n')
+            print('Investigate the following sample names:\n')
+            for i in dfg_false.index:
+                sample_name = dfg_false.loc[i]['sample_name']
+                print(sample_name)
+            print('\nOUTPUT:')
+            print(f'{self.report_path}\n')
         return
 
 # __END__
