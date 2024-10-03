@@ -1,3 +1,5 @@
+#!/usr/bin/python3.10
+
 # Project     : merge_fastq
 # File Name   : prep_rename_file.py
 # Description : Prepare a rename file for merging FASTQ files.

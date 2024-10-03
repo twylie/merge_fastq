@@ -1,3 +1,5 @@
+#!/usr/bin/python3.10
+
 # Project     : merge_fastq
 # File Name   : eval_fastq_counts.py
 # Description : Evaluate and compare read counts for merged FASTQ files.
