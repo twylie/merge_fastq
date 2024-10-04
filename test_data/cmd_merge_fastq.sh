@@ -3,7 +3,7 @@ merge_fastq \
     --samplemap batch1/Samplemap.csv batch2/Samplemap.csv \
     --outdir /tmp/test \
     --rename rename.tsv \
-    --lsf-vol "/foo" "/bar" \
+    --lsf-vol "/home/twylie" "/scratch1/fs1/twylie" \
     --project PTLD
 
 sh /tmp/test/__bsub/1_merge_fastq.sh
