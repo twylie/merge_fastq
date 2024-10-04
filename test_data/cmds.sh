@@ -1,6 +1,8 @@
+mkdir /tmp/renaming
+
 prep_rename_file \
     --samplemap batch1/Samplemap.csv batch2/Samplemap.csv \
-    --rename-out /tmp/test/prep-rename.tsv
+    --rename-out /tmp/renaming/prep-rename.tsv
 
 merge_fastq \
     --samplemap batch1/Samplemap.csv batch2/Samplemap.csv \
