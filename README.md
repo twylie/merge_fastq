@@ -610,7 +610,8 @@ test_data
 
 ### Running Test Data Demo
 
-The following demo assumes you are an employee in the Wylie Lab at WashU with proper credentials and access to `compute1` and `storage1`. Do not use `twylie` as the user when running these commands, but rather use your own user name, home directory, space, etc. The demo is using `scratch1` space; however, use larger `storage1` space when running real FASTQ batches.
+> [!WARNING]
+> The following demo assumes you are an employee in the Wylie Lab at WashU with proper credentials and access to `compute1` and `storage1`. Do not use `twylie` as the user when running these commands, but rather use your own user name, home directory, space, etc. The demo is using `scratch1` space; however, use larger `storage1` space when running real FASTQ batches.
 
 ```zsh
 # Log into WashU.
