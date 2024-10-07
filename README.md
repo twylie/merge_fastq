@@ -27,7 +27,7 @@ There are several dependencies required in order to effectively run `merge_fastq
 
 ## Steps for Merging FASTQ
 
-> **Conceptual Overview**
+> **Conceptual Overview** \
 > This section outlines the conceptual steps in merging a FASTQ batch more so than command line instructions. I recommend reading over this section to understand the steps required before attempting to run related commands. For detailed instructions on command usage, see the **Commands** and **Test Data Set and Demonstration** sections below. Sitting down and running the commands in **Running Test Data Demo** provides the best step-by-step instructions for command line formation.
 
 ### 1. Locate Sequencing Batches
@@ -84,7 +84,7 @@ Samplemap.csv Fields
 ```
 
 ```python
-## Example dictionary for a FASTQ entry in Samplemap.csv file.
+# Example dictionary for a FASTQ entry in Samplemap.csv file.
 {'% >Q30': 94.0,
 '% Pass Filter Clusters': 67.26,
 'Avg Q Score': 38.81,
@@ -351,7 +351,7 @@ Fields
 The dataframe makes asking questions of the merged samples easy. For example, say we want to see the original sample name, the revised sample name, and the final merged FASTQ path for the batch using Python and Pandas.
 
 ```python
-## Example of interrogating the merged FASTQ dataframe.
+# Example of interrogating the merged FASTQ dataframe.
 import pandas as pd
 df = pd.read_pickle('merged_samplemap.tsv.pickle')
 df_paths = df[
@@ -359,13 +359,13 @@ df_paths = df[
 ].drop_duplicates().reset_index(drop=True)
 print(df_paths)
 
-##   sample_name revised_sample_name                            merged_fastq_path
-## 0  H214_1_3_2              H214_1      /tmp/test/H214_1_3_2/H214_1.R1.fastq.gz
-## 1  H214_1_3_2              H214_1      /tmp/test/H214_1_3_2/H214_1.R2.fastq.gz
-## 2  H214_3_3_2          H214_3_3_2  /tmp/test/H214_3_3_2/H214_3_3_2.R1.fastq.gz
-## 3  H214_3_3_2          H214_3_3_2  /tmp/test/H214_3_3_2/H214_3_3_2.R2.fastq.gz
-## 4  H214_2_6_2              H214_2      /tmp/test/H214_2_6_2/H214_2.R1.fastq.gz
-## 5  H214_2_6_2              H214_2      /tmp/test/H214_2_6_2/H214_2.R2.fastq.gz
+#   sample_name revised_sample_name                            merged_fastq_path
+# 0  H214_1_3_2              H214_1      /tmp/test/H214_1_3_2/H214_1.R1.fastq.gz
+# 1  H214_1_3_2              H214_1      /tmp/test/H214_1_3_2/H214_1.R2.fastq.gz
+# 2  H214_3_3_2          H214_3_3_2  /tmp/test/H214_3_3_2/H214_3_3_2.R1.fastq.gz
+# 3  H214_3_3_2          H214_3_3_2  /tmp/test/H214_3_3_2/H214_3_3_2.R2.fastq.gz
+# 4  H214_2_6_2              H214_2      /tmp/test/H214_2_6_2/H214_2.R1.fastq.gz
+# 5  H214_2_6_2              H214_2      /tmp/test/H214_2_6_2/H214_2.R2.fastq.gz
 ```
 
 **The merged_samplemap.tsv.pickle File**
@@ -413,7 +413,7 @@ A few simple shell commands can help assess if the jobs properly completed.
 First, determine how many total jobs should have run in the LSF queue. This will be equal to the total number of samples in the `rename.tsv` file. The total number of samples should also be equal to the number of shell commands for merging FASTQ run in the `__bsub/` directory, as well as the connected LSF error and output files.
 
 ```zsh
-## Run commands from the merge_fastq --outdir directory.
+# Run commands from the merge_fastq --outdir directory.
 ls __bsub/*fastq.sh | wc -l  # total job count
 ls __bsub/*err | wc -l  # total job count
 ls __bsub/*out | wc -l  # total job count
@@ -424,7 +424,7 @@ If processing was complete, you may proceed to check for other errors.
 We can review the LSF processing logs by searching for potential error keywords This is not an exhaustive search but catches the majority of issues.
 
 ```zsh
-## Run commands from the merge_fastq --outdir directory.
+# Run commands from the merge_fastq --outdir directory.
 grep -i "exit" __bsub/*out | wc -l  # should be 0
 grep -i "error" __bsub/*err | wc -l  # should be 0
 grep -i "success" __bsub/*out | wc -l  # should equal total job count
@@ -433,7 +433,7 @@ grep -i "success" __bsub/*out | wc -l  # should equal total job count
 Finally, each sample should produce one pair (R1 and R2) of merged FASTQ files.
 
 ```zsh
-## Run commands from the merge_fastq --outdir directory.
+# Run commands from the merge_fastq --outdir directory.
 find * -type f | grep "R1.fastq.gz$" | wc -l  # should equal total job count
 find * -type f | grep "R2.fastq.gz$" | wc -l  # should equal total job count
 ```
@@ -467,16 +467,16 @@ The following commands are supported in the latest version of the `merge_fastq` 
 To pull the latest image and start an interactive shell, do the following.
 
 ```zsh
-## Example is for Mac running Docker Desktop.
+# Example is for Mac running Docker Desktop.
 docker pull twylie/merge_fastq:latest
 docker container run --platform linux/amd64 -it twylie/merge_fastq:latest zsh
 merge_fastq
 
-## usage: merge_fastq [-h] [--version] [--lsf-image STR] [--lsf-group STR] [--lsf-queue STR]
-##         [--lsf-dry] [--no-lsf-dry] --samplemap FILE [FILE ...] --outdir DIR --rename FILE
-##         --lsf-vol PATH [PATH ...] --project {MIDAS,PLACENTA,PTLD}
-## merge_fastq: error: the following arguments are required: --samplemap, --outdir, --rename,
-##                     --lsf-vol, --project
+# usage: merge_fastq [-h] [--version] [--lsf-image STR] [--lsf-group STR] [--lsf-queue STR]
+#         [--lsf-dry] [--no-lsf-dry] --samplemap FILE [FILE ...] --outdir DIR --rename FILE
+#         --lsf-vol PATH [PATH ...] --project {MIDAS,PLACENTA,PTLD}
+# merge_fastq: error: the following arguments are required: --samplemap, --outdir, --rename,
+#                     --lsf-vol, --project
 ```
 
 ### 1. Running `prep_rename_file` Command
@@ -612,29 +612,26 @@ test_data
 
 The following demo assumes you are an employee in the Wylie Lab at WashU with proper credentials and access to `compute1` and `storage1`. Do not use `twylie` as the user when running these commands, but rather use your own user name, home directory, space, etc. The demo is using `scratch1` space; however, use larger `storage1` space when running real FASTQ batches.
 
-==TK== Add instructions for cloning the GitHub repository here.
-
 ```zsh
-## Log into WashU.
+# Log into WashU.
 
 ssh compute1-client-1.ris.wustl.edu
 
-## Change directory to your scratch area and create directories for
-## processing.
+# Change directory to your scratch area and create directories for
+# processing.
 
 cd /scratch1/fs1/twylie/
 mkdir merge_fastq_demo
 cd merge_fastq_demo/
 
-## Clone the merge_fastq GitHub repository and change directory to the
-## test data set.
+# Clone the merge_fastq GitHub repository and change directory to the
+# test data set.
 
-## Clone the repository step here.
+git clone https://github.com/twylie/merge_fastq.git
+cd merge_fastq/test_data/
 
-cd test_data/
-
-## Get an interactive Docker session by calling the merge_fastq:latest
-## Docker image. You should still be in the test_data/ directory.
+# Get an interactive Docker session by calling the merge_fastq:latest
+# Docker image. You should still be in the test_data/ directory.
 
 LSF_DOCKER_VOLUMES='/scratch1/fs1/twylie/merge_fastq_demo/test_data:/scratch1/fs1/twylie/merge_fastq_demo/test_data' \
                   bsub -Is -R 'select[mem>16GB] rusage[mem=16GB]' \
@@ -643,18 +640,18 @@ LSF_DOCKER_VOLUMES='/scratch1/fs1/twylie/merge_fastq_demo/test_data:/scratch1/fs
                   -a 'docker(twylie/merge_fastq:latest)' \
                   zsh
 
-## Running the prep_rename_file command is optional since the test_data/
-## directory already has a rename.tsv file. However, running the
-## prep_rename_file command looks like the following.
+# Running the prep_rename_file command is optional since the test_data/
+# directory already has a rename.tsv file. However, running the
+# prep_rename_file command looks like the following.
 
 prep_rename_file \
     --samplemap "batch1/Samplemap.csv" "batch2/Samplemap.csv" \
     --rename-out "-prep_rename.tsv"
 
-## Now run the merge_fastq command using the test_data/rename.tsv file as
-## input. You should include your home directory and the working
-## directory in the --lsf-vol argument. We are passiong two Samplemap.csv
-## because there are two sequencing batches in the test_data/ set.
+# Now run the merge_fastq command using the test_data/rename.tsv file as
+# input. You should include your home directory and the working
+# directory in the --lsf-vol argument. We are passiong two Samplemap.csv
+# because there are two sequencing batches in the test_data/ set.
 
 merge_fastq \
     --samplemap "batch1/Samplemap.csv" "batch2/Samplemap.csv" \
@@ -664,15 +661,15 @@ merge_fastq \
     --project "MIDAS" \
     --no-lsf-dry
 
-## Monitor the LSF job progress using the bsub command.
+# Monitor the LSF job progress using the bsub command.
 
 bjobs
 
-## When all of the LSF jobs have completed, you can validate that there
-## were no complications by reviewing the LSF logs in the __bsub/
-## directory. Also, half the number of merged FASTQ files (R1 + R2 are a
-## sample pair) should equal the total number samples in the rename.tsv
-## file.
+# When all of the LSF jobs have completed, you can validate that there
+# were no complications by reviewing the LSF logs in the __bsub/
+# directory. Also, half the number of merged FASTQ files (R1 + R2 are a
+# sample pair) should equal the total number samples in the rename.tsv
+# file.
 
 grep -i "exit" __bsub/*out | wc -l  # should be 0
 grep -i "error" __bsub/*err | wc -l  # should be 0
@@ -681,8 +678,8 @@ grep -i "success" __bsub/*out | wc -l  # should equal total job count
 find * -type f | grep "R1.fastq.gz$" | wc -l  # should equal total job count
 find * -type f | grep "R2.fastq.gz$" | wc -l  # should equal total job count
 
-## Provided that you are satisfied all jobs completed correctly, you may
-## now run the eval_fastq_counts command.
+# Provided that you are satisfied all jobs completed correctly, you may
+# now run the eval_fastq_counts command.
 
 eval_fastq_counts \
     --merged-samplemap "results/merged_samplemap.tsv" \
