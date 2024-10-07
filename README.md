@@ -106,7 +106,7 @@ Samplemap.csv Fields
 
 If the format of the `Samplemap.csv` file changes in the future, the `merge_fastq` code base will require updates to work properly.
 
->[!important] Summary
+>[!IMPORTANT] Summary
 > + A batch is a set of sequencing FASTQ files accompanied by a `Samplemap.csv` file.
 > + All of the FASTQ files and `Samplemap.csv` should be at the same level in a directory.
 > + Use `Samplemap.csv` files and not `Samplemap2.csv` files.
@@ -154,7 +154,7 @@ WLAB-H149_1_13_2_Swift-2-1      H149_1_13_2        Swift kit test sample.
 WLAB-H152_11_15_2-H152_11_15_2  H152_11_15_2
 ```
 
->[!important] Summary
+>[!IMPORTANT] Summary
 > + It is not uncommon to need to rename the FASTQ files in a batch.
 > + Running the `prep_rename_file` command provides a initial file for renaming samples.
 > + A user can manually edit a `rename.tsv` file before supplying it to the `merge_fastq` command.
@@ -394,7 +394,7 @@ This is just a copy of the original input `Samplemap.csv` files as supplied to t
        `-- Samplemap.csv
 ```
 
->[!important] Summary
+>[!IMPORTANT] Summary
 > + The `merge_fastq` command launches parallel jobs to merge FASTQ files and write metadata.
 > + You will need to log into WashU's `compute1` to run `merge_fastq`.
 > + The `__bsub` directory contains individual sample merging commands executed across the LSF system.
@@ -440,7 +440,7 @@ find * -type f | grep "R2.fastq.gz$" | wc -l  # should equal total job count
 
 If the counts above differ, processing was incomplete and you will need to investigate, fix, and reprocess the FASTQ batch. Provided that you are satisfied all jobs completed correctly, you may now proceed to running the `eval_fastq_counts` command.
 
->[!important] Summary
+>[!IMPORTANT] Summary
 > + Each unique sample automatically gets its own LSF bsub job for merging commands.
 > + Check the process state of submitted jobs using the `bjobs` command.
 > + LSF logs were written to the results `__bsub/` directory.
@@ -454,7 +454,7 @@ The `src_read_counts.tsv` provides a matrix of samples and their sequence "throu
 
 The `read_count_comparisons.tsv` compares the values in `gtac_read_counts.tsv` (GTAC@MGI reported counts) to `src_read_counts.tsv` (`merged_fastq` counts) and reports any differences. This file highlights any differences in sample read counts between the sequencing core and the final, merged FASTQ files.
 
->[!important] Summary
+>[!IMPORTANT] Summary
 > + FASTQ files were independently evaluated for read counts during merging.
 > + Each merged FASTQ file receives a `.counts` file.
 > + The `src_read_counts.tsv` file provides a matrix of merged samples and their calculated sequence throughput.
@@ -692,12 +692,12 @@ eval_fastq_counts \
 
 ## Contact
 
-**Todd N. Wylie, Associate Professor**
-Department of Pediatrics
-Division of Gastroenterology, Hepatology, & Nutrition
-Washington University School of Medicine
-660 S. Euclid Avenue, MSC 8208-0043-10
-St. Louis, MO 63110
+**Todd N. Wylie, Associate Professor** \
+Department of Pediatrics \
+Division of Gastroenterology, Hepatology, & Nutrition \
+Washington University School of Medicine \
+660 S. Euclid Avenue, MSC 8208-0043-10 \
+St. Louis, MO 63110 \
 email — twylie@wustl.edu
 
 ## License
