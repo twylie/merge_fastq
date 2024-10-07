@@ -28,7 +28,7 @@ There are several dependencies required in order to effectively run `merge_fastq
 ## Steps for Merging FASTQ
 
 > **Conceptual Overview** \
-> This section outlines the conceptual steps in merging a FASTQ batch more so than command line instructions. I recommend reading over this section to understand the steps required before attempting to run related commands. For detailed instructions on command usage, see the **Commands** and **Test Data Set and Demonstration** sections below. Sitting down and running the commands in **Running Test Data Demo** provides the best step-by-step instructions for command line formation.
+> This section outlines the conceptual steps in merging a FASTQ batch more so than command line instructions. I recommend reading over this section to understand the steps required before attempting to run related commands. For detailed instructions on command usage, see the [Commands](#commands) and [Test Data Set and Demonstration](#test-data-set-and-demonstration) sections below. Sitting down and running the commands in [Running Test Data Demo](#running-test-data-demo) provides the best step-by-step instructions for command line formation.
 
 ### 1. Locate Sequencing Batches
 
