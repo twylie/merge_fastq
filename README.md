@@ -106,7 +106,7 @@ Samplemap.csv Fields
 
 If the format of the `Samplemap.csv` file changes in the future, the `merge_fastq` code base will require updates to work properly.
 
->[!IMPORTANT] Summary
+> [!IMPORTANT] Summary
 > + A batch is a set of sequencing FASTQ files accompanied by a `Samplemap.csv` file.
 > + All of the FASTQ files and `Samplemap.csv` should be at the same level in a directory.
 > + Use `Samplemap.csv` files and not `Samplemap2.csv` files.
