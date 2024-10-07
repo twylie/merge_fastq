@@ -634,7 +634,7 @@ cd merge_fastq/test_data/
 # Get an interactive Docker session by calling the merge_fastq:latest
 # Docker image. You should still be in the test_data/ directory.
 
-LSF_DOCKER_VOLUMES='/scratch1/fs1/twylie/merge_fastq_demo/test_data:/scratch1/fs1/twylie/merge_fastq_demo/test_data' \
+LSF_DOCKER_VOLUMES='/scratch1/fs1/twylie/merge_fastq_demo/merge_fastq/test_data:/scratch1/fs1/twylie/merge_fastq_demo/merge_fastq/test_data' \
                   bsub -Is -R 'select[mem>16GB] rusage[mem=16GB]' \
                   -G compute-kwylie \
                   -q general-interactive \
@@ -647,7 +647,7 @@ LSF_DOCKER_VOLUMES='/scratch1/fs1/twylie/merge_fastq_demo/test_data:/scratch1/fs
 
 prep_rename_file \
     --samplemap "batch1/Samplemap.csv" "batch2/Samplemap.csv" \
-    --rename-out "-prep_rename.tsv"
+    --rename-out "prep_rename.tsv"
 
 # Now run the merge_fastq command using the test_data/rename.tsv file as
 # input. You should include your home directory and the working
@@ -672,10 +672,10 @@ bjobs
 # sample pair) should equal the total number samples in the rename.tsv
 # file.
 
-grep -i "exit" __bsub/*out | wc -l  # should be 0
-grep -i "error" __bsub/*err | wc -l  # should be 0
-ls __bsub/*fastq.sh | wc -l  # total job count
-grep -i "success" __bsub/*out | wc -l  # should equal total job count
+grep -i "exit" results/__bsub/*out | wc -l  # should be 0
+grep -i "error" results/__bsub/*err | wc -l  # should be 0
+ls results/__bsub/*fastq.sh | wc -l  # total job count
+grep -i "success" results/__bsub/*out | wc -l  # should equal total job count
 find * -type f | grep "R1.fastq.gz$" | wc -l  # should equal total job count
 find * -type f | grep "R2.fastq.gz$" | wc -l  # should equal total job count
 
