@@ -438,6 +438,35 @@ class Samplemap:
             )
         return
 
+    def __eval_whitespace(self: Self) -> None:
+        """Evaluate if sample names contain whitespace.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        ValueError
+            No whitespace allowed in sample names. Fix Samplemap.csv
+            files.
+
+        Returns
+        -------
+        None
+        """
+        df = self.df_smaps.copy()
+        dfg = df.groupby('sample_name')
+        sample_ids = set(dfg.groups.keys())
+        for sample_id in sample_ids:
+            if sample_id.find(r' '):
+                raise ValueError(
+                    ('No whitespace allowed in sample names. Fix '
+                     'Samplemap.csv files.'),
+                    sample_id
+                )
+        return
+
     def __eval_cross_batch_sample_ids(self: Self) -> None:
         """Evaluate if sample ids cross batches.
 
@@ -524,6 +553,7 @@ class Samplemap:
             self.__parse_samplemap(i=i, smap=smap, smap_type=smap_type)
         self.__concatenate_samplemaps()
         self.__eval_cross_batch_sample_ids()
+        self.__eval_whitespace()
         return
 
     def __eval_origin_fastq(self: Self) -> None:

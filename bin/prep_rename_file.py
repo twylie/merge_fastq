@@ -140,7 +140,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 # MAIN ########################################################################
 
 if __name__ == '__main__':
-    VERSION = '1.0.0'
+    VERSION = '1.0.1'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
@@ -162,6 +162,16 @@ if __name__ == '__main__':
         dfs.append(df)
     df_smaps = pd.concat(dfs).reset_index(drop=True)
     sample_names = list(df_smaps['Library Name'].unique())
+
+    # No whitespace allowed in sample names.
+
+    for sample_name in sample_names:
+        if sample_name.find(r' '):
+            raise ValueError(
+                ('No whitespace allowed in sample names. '
+                 'Fix Samplemap.csv files.'),
+                sample_name
+            )
 
     # Write the prepared rename file.
 
