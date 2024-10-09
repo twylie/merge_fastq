@@ -444,7 +444,7 @@ class ReadCountsSource():
             collection[i] = {
                 'perct_label': f'perct_of_{target_count}',
                 'col_perct_of_target': list(),
-                'is_passed_label': f'is_pased_{target_count}',
+                'is_passed_label': f'is_passed_{target_count}',
                 'is_pass_perct_target': list()
             }
 
