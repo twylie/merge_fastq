@@ -140,7 +140,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 # MAIN ########################################################################
 
 if __name__ == '__main__':
-    VERSION = '1.0.1'
+    VERSION = '1.0.2'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     # No whitespace allowed in sample names.
 
     for sample_name in sample_names:
-        if sample_name.find(r' '):
+        if sample_name.find(r' ') >= 0:
             raise ValueError(
                 ('No whitespace allowed in sample names. '
                  'Fix Samplemap.csv files.'),

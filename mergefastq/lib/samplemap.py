@@ -459,7 +459,7 @@ class Samplemap:
         dfg = df.groupby('sample_name')
         sample_ids = set(dfg.groups.keys())
         for sample_id in sample_ids:
-            if sample_id.find(r' '):
+            if sample_id.find(r' ') >= 0:
                 raise ValueError(
                     ('No whitespace allowed in sample names. Fix '
                      'Samplemap.csv files.'),
