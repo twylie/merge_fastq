@@ -341,7 +341,9 @@ class Samplemap:
             sample_name_col.append(sample_name)
             library_type_col.append(library_type)
             total_bases_col.append(total_bases)
-            samplemap_path_col.append(samplemap_path)
+            samplemap_path_col.append(
+                str(Path(samplemap_path).resolve())
+            )
             total_reads_col.append(total_reads)
             esp_id_col.append(esp_id)
             pool_name_col.append(pool_name)

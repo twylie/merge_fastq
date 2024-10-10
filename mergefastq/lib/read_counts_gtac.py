@@ -215,12 +215,15 @@ class ReadCountsGtac:
         col_r2_counts: list = list()
         col_sample_counts: list = list()
         col_target_min_perct: list = list()
+        col_samplemap_path: list = list()
         target_cols: dict = dict()
 
         for i, sample_name in enumerate(dfg.groups):
             col_sample_name.append(sample_name)
             col_target_min_perct.append(self.target_min_perct)
             dfi = dfg.get_group(sample_name)
+            samplemap_path = list(set(dfi['samplemap_path']))[0]
+            col_samplemap_path.append(samplemap_path)
             sample_counts = list(set(dfi['gtac_sample_reads']))[0]
             col_sample_counts.append(sample_counts)
             dfg_rn = dfi.groupby('read_number')
@@ -256,6 +259,7 @@ class ReadCountsGtac:
 
         if (
             len(col_sample_name) ==
+            len(col_samplemap_path) ==
             len(col_r1_counts) ==
             len(col_r2_counts) ==
             len(col_sample_counts) ==
@@ -276,6 +280,7 @@ class ReadCountsGtac:
 
         df_seqcov = pd.DataFrame()
         df_seqcov['sample_name'] = col_sample_name
+        df_seqcov['samplemap_path'] = col_samplemap_path
         df_seqcov['R1_read_counts'] = col_r1_counts
         df_seqcov['R2_read_counts'] = col_r2_counts
         df_seqcov['sample_read_counts'] = col_sample_counts
