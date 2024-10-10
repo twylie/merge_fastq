@@ -351,7 +351,7 @@ class MergeFastq:
                 r1_copy_cmds.append(
                     f'md5sum {dest_r1_fq} > {dest_r1_fq}.MD5'
                 )
-                cmd = (f'echo $(zgrep -c ^ {dest_r1_fq} / 4 | bc '
+                cmd = (f'echo $(zgrep -c ^ {dest_r1_fq}) / 4 | bc '
                        f'> {dest_r1_fq}.counts')
                 r1_copy_cmds.append(cmd)
             elif is_src_r1_fq_gzip is False:
@@ -372,7 +372,7 @@ class MergeFastq:
                 r2_copy_cmds.append(
                     f'md5sum {dest_r2_fq} > {dest_r2_fq}.MD5'
                 )
-                cmd = (f'echo $(zgrep -c ^ {dest_r2_fq} / 4 | bc '
+                cmd = (f'echo $(zgrep -c ^ {dest_r2_fq}) / 4 | bc '
                        f'> {dest_r2_fq}.counts')
                 r2_copy_cmds.append(cmd)
             elif is_src_r2_fq_gzip is False:
