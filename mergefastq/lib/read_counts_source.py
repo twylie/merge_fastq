@@ -217,7 +217,8 @@ class ReadCountsSource():
                 with open(fastq_counts, 'r') as fhi:
                     for line in fhi:
                         read_counts = line.strip()
-                        col_counts.append(int(read_counts))
+                        counts = int(read_counts)
+                        col_counts.append(counts)
 
         if len(col_counts) == len(df.index) is False:
             raise ValueError('Read counts column length and dataframe '
@@ -240,7 +241,8 @@ class ReadCountsSource():
         Raises
         ------
         ValueError
-            Odd length of read pairs.
+            Source end pair counts should be equal for all same-end
+            entries.
 
         ValueError
             Sample counts column length does not match dataframe.
@@ -261,21 +263,21 @@ class ReadCountsSource():
         df = self.df_merged.copy()
         dfg = df.groupby(['sample_name', 'read_number'])
         for i in dfg.groups:
+            # NOTE: The src_end_pair_reads values are already merged for
+            # a sample's read-end, since the source counts are on the
+            # merged FASTQ read-end file. Therefore a sample_counts
+            # value is double a given src_end_pair_reads value for a
+            # sample.
             sample_name, read_number = i
             dfi = dfg.get_group(i)
-            if len(dfi['src_end_pair_reads']) == 1:
+            end_pair_count = len(dfi['src_end_pair_reads'])
+            if len(set(dfi['src_end_pair_reads'])) > 1:
+                raise ValueError('Source end pair counts should be equal '
+                                 'for all same-end entries.')
+            if end_pair_count == 1:
                 sample_counts = dfi['src_end_pair_reads'].item() * 2
-            elif len(dfi['src_end_pair_reads']) == 2:
-                sample_counts = dfi.sum()['src_end_pair_reads']
-            else:
-                count = len(dfi['src_end_pair_reads'])
-                values = dfi['src_end_pair_reads'].values
-                msg = (f'{sample_name} end=R{read_number} '
-                       f'count={count} {values}')
-                raise ValueError(
-                    'Odd length of read pairs.',
-                    msg
-                )
+            elif end_pair_count > 1:
+                sample_counts = dfi['src_end_pair_reads'].values[0] * 2
             count_index[sample_name] = {'sample_counts': int(sample_counts)}
 
         col_sample_counts: list = list()
@@ -441,8 +443,8 @@ class ReadCountsSource():
         df_seqcov = pd.DataFrame()
         df_seqcov['sample_name'] = col_sample_name
         df_seqcov['samplemap_path'] = col_samplemap_path
-        df_seqcov['R1_read_counts'] = col_r1_counts
-        df_seqcov['R2_read_counts'] = col_r2_counts
+        df_seqcov['r1_read_counts'] = col_r1_counts
+        df_seqcov['r2_read_counts'] = col_r2_counts
         df_seqcov['sample_read_counts'] = col_sample_counts
         df_seqcov['min_target_perct_cov'] = col_target_min_perct
 
@@ -587,8 +589,8 @@ class ReadCountsSource():
         REPORT FIELDS
         -------------
         1. sample_name        : STR
-        2  R1_read_counts     : STR | NaN
-        3. R2_read_counts     : STR | NaN
+        2  r1_read_counts     : STR | NaN
+        3. r2_read_counts     : STR | NaN
         4. sample_read_counts : STR | NaN
         5. is_no_difference   : BOOL
 
@@ -616,19 +618,19 @@ class ReadCountsSource():
         for i in df_eval.index:
             sample_name = df_gtac.loc[i]['sample_name']
             col_sample_names.append(sample_name)
-            is_r1_same = bool(df_eval.loc[i]['R1_read_counts'])
-            is_r2_same = bool(df_eval.loc[i]['R2_read_counts'])
+            is_r1_same = bool(df_eval.loc[i]['r1_read_counts'])
+            is_r2_same = bool(df_eval.loc[i]['r2_read_counts'])
             is_sample_same = bool(df_eval.loc[i]['sample_read_counts'])
             if is_r1_same is False:
-                gtac_counts = df_gtac.loc[i]['R1_read_counts']
-                src_counts = df_src.loc[i]['R1_read_counts']
+                gtac_counts = df_gtac.loc[i]['r1_read_counts']
+                src_counts = df_src.loc[i]['r1_read_counts']
                 r1_comp = f'{gtac_counts}:{src_counts}'
                 col_r1_read_counts.append(r1_comp)
             elif is_r1_same is True:
                 col_r1_read_counts.append(np.nan)
             if is_r2_same is False:
-                gtac_counts = df_gtac.loc[i]['R2_read_counts']
-                src_counts = df_src.loc[i]['R2_read_counts']
+                gtac_counts = df_gtac.loc[i]['r2_read_counts']
+                src_counts = df_src.loc[i]['r2_read_counts']
                 r2_comp = f'{gtac_counts}:{src_counts}'
                 col_r2_read_counts.append(r2_comp)
             elif is_r2_same is True:
@@ -642,15 +644,15 @@ class ReadCountsSource():
                 col_sample_read_counts.append(np.nan)
 
         self.df_comp['sample_name'] = col_sample_names
-        self.df_comp['R1_read_counts'] = col_r1_read_counts
-        self.df_comp['R2_read_counts'] = col_r2_read_counts
+        self.df_comp['r1_read_counts'] = col_r1_read_counts
+        self.df_comp['r2_read_counts'] = col_r2_read_counts
         self.df_comp['sample_read_counts'] = col_sample_read_counts
 
         col_bool: list = list()
         for i in df_eval.index:
             dfi = df_eval.loc[i][[
-                'R1_read_counts',
-                'R2_read_counts',
+                'r1_read_counts',
+                'r2_read_counts',
                 'sample_read_counts'
             ]]
             is_all_true = bool(dfi.all())

@@ -281,8 +281,8 @@ class ReadCountsGtac:
         df_seqcov = pd.DataFrame()
         df_seqcov['sample_name'] = col_sample_name
         df_seqcov['samplemap_path'] = col_samplemap_path
-        df_seqcov['R1_read_counts'] = col_r1_counts
-        df_seqcov['R2_read_counts'] = col_r2_counts
+        df_seqcov['r1_read_counts'] = col_r1_counts
+        df_seqcov['r2_read_counts'] = col_r2_counts
         df_seqcov['sample_read_counts'] = col_sample_counts
         df_seqcov['min_target_perct_cov'] = col_target_min_perct
 
