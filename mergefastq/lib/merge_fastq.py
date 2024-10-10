@@ -347,16 +347,19 @@ class MergeFastq:
 
             r1_copy_cmds: list = list()
             if is_src_r1_fq_gzip is True:
-                r1_copy_cmds.append(f'cp {src_r1_fq} {dest_r1_fq}')
                 r1_copy_cmds.append(
-                    f'md5sum {dest_r1_fq} > {dest_r1_fq}.MD5'
+                    f'cp {src_r1_fq} {str(dest_r1_fq.resolve())}'
                 )
-                cmd = (f'echo $(zgrep -c ^ {dest_r1_fq}) / 4 | bc '
-                       f'> {dest_r1_fq}.counts')
+                r1_copy_cmds.append(
+                    f'md5sum {str(dest_r1_fq.resolve())} > '
+                    f'{str(dest_r1_fq.resolve())}.MD5'
+                )
+                cmd = (f'echo $(zgrep -c ^ {str(dest_r1_fq.resolve())}) / 4 '
+                       f'| bc > {str(dest_r1_fq.resolve())}.counts')
                 r1_copy_cmds.append(cmd)
             elif is_src_r1_fq_gzip is False:
                 src_r1_fq_stem = src_r1_fq[:-3]
-                dest_r1_fq_stem = dest_r1_fq.as_posix()[:-3]
+                dest_r1_fq_stem = str(dest_r1_fq.resolve())[:-3]
                 r1_copy_cmds.append(f'cp {src_r1_fq_stem} {dest_r1_fq_stem}')
                 r1_copy_cmds.append(f'gzip {dest_r1_fq_stem}')
                 r1_copy_cmds.append(
@@ -368,16 +371,19 @@ class MergeFastq:
 
             r2_copy_cmds: list = list()
             if is_src_r2_fq_gzip is True:
-                r2_copy_cmds.append(f'cp {src_r2_fq} {dest_r2_fq}')
                 r2_copy_cmds.append(
-                    f'md5sum {dest_r2_fq} > {dest_r2_fq}.MD5'
+                    f'cp {src_r2_fq} {str(dest_r2_fq.resolve())}'
                 )
-                cmd = (f'echo $(zgrep -c ^ {dest_r2_fq}) / 4 | bc '
-                       f'> {dest_r2_fq}.counts')
+                r2_copy_cmds.append(
+                    f'md5sum {str(dest_r2_fq.resolve())} > '
+                    f'{str(dest_r2_fq.resolve())}.MD5'
+                )
+                cmd = (f'echo $(zgrep -c ^ {str(dest_r2_fq.resolve())}) / 4 '
+                       f'| bc > {str(dest_r2_fq.resolve())}.counts')
                 r2_copy_cmds.append(cmd)
             elif is_src_r2_fq_gzip is False:
                 src_r2_fq_stem = src_r2_fq[:-3]
-                dest_r2_fq_stem = dest_r2_fq.as_posix()[:-3]
+                dest_r2_fq_stem = str(dest_r2_fq.resolve())[:-3]
                 r2_copy_cmds.append(f'cp {src_r2_fq_stem} {dest_r2_fq_stem}')
                 r2_copy_cmds.append(f'gzip {dest_r2_fq_stem}')
                 r2_copy_cmds.append(
@@ -552,15 +558,24 @@ class MergeFastq:
                     from_r1_fq = src_r1_fq[i][:-3]
                     to_r1_fq = sample_dir / Path(src_r1_fq[i]).stem
                     tmp_r1.add(to_r1_fq)
-                    r1_merge_cmds.append(f'cp {from_r1_fq} {to_r1_fq}')
-                    r1_merge_cmds.append(f'gzip {to_r1_fq}')
+                    r1_merge_cmds.append(
+                        f'cp {from_r1_fq} {str(to_r1_fq.resolve())}'
+                    )
+                    r1_merge_cmds.append(
+                        f'gzip {str(to_r1_fq.resolve())}'
+                    )
                     to_r1_gzip_fq = str(to_r1_fq) + '.gz'
                     r1_cat_order.append(to_r1_gzip_fq)
             cat_files = ' '.join(r1_cat_order)
-            r1_merge_cmds.append(f'cat {cat_files} > {dest_r1_fq}')
-            r1_merge_cmds.append(f'md5sum {dest_r1_fq} > {dest_r1_fq}.MD5')
-            cmd = (f'echo $(zgrep -c ^ {dest_r1_fq}) / 4 | bc '
-                   f'> {dest_r1_fq}.counts')
+            r1_merge_cmds.append(
+                f'cat {cat_files} > {str(dest_r1_fq.resolve())}'
+            )
+            r1_merge_cmds.append(
+                f'md5sum {str(dest_r1_fq.resolve())} > '
+                f'{str(dest_r1_fq.resolve())}.MD5'
+            )
+            cmd = (f'echo $(zgrep -c ^ {str(dest_r1_fq.resolve())}) / 4 '
+                   f'| bc > {str(dest_r1_fq.resolve())}.counts')
             r1_merge_cmds.append(cmd)
             if tmp_r1:
                 for tmp_file in tmp_r1:
@@ -577,15 +592,24 @@ class MergeFastq:
                     from_r2_fq = src_r2_fq[i][:-3]
                     to_r2_fq = sample_dir / Path(src_r2_fq[i]).stem
                     tmp_r2.add(to_r2_fq)
-                    r2_merge_cmds.append(f'cp {from_r2_fq} {to_r2_fq}')
-                    r2_merge_cmds.append(f'gzip {to_r2_fq}')
+                    r2_merge_cmds.append(
+                        f'cp {from_r2_fq} {str(to_r2_fq.resolve())}'
+                    )
+                    r2_merge_cmds.append(
+                        f'gzip {str(to_r2_fq.resolve())}'
+                    )
                     to_r2_gzip_fq = str(to_r2_fq) + '.gz'
                     r2_cat_order.append(to_r2_gzip_fq)
             cat_files = ' '.join(r2_cat_order)
-            r2_merge_cmds.append(f'cat {cat_files} > {dest_r2_fq}')
-            r2_merge_cmds.append(f'md5sum {dest_r2_fq} > {dest_r2_fq}.MD5')
-            cmd = (f'echo $(zgrep -c ^ {dest_r2_fq}) / 4 | bc '
-                   f'> {dest_r2_fq}.counts')
+            r2_merge_cmds.append(
+                f'cat {cat_files} > {str(dest_r2_fq.resolve())}'
+            )
+            r2_merge_cmds.append(
+                f'md5sum {str(dest_r2_fq.resolve())} > '
+                f'{str(dest_r2_fq.resolve())}.MD5'
+            )
+            cmd = (f'echo $(zgrep -c ^ {str(dest_r2_fq.resolve())}) / 4 '
+                   f'| bc > {str(dest_r2_fq.resolve())}.counts')
             r2_merge_cmds.append(cmd)
             if tmp_r2:
                 for tmp_file in tmp_r2:
