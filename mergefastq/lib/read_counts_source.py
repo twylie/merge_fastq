@@ -240,7 +240,7 @@ class ReadCountsSource():
         Raises
         ------
         ValueError
-            Odd length of reads pairs.
+            Odd length of read pairs.
 
         ValueError
             Sample counts column length does not match dataframe.
@@ -268,9 +268,13 @@ class ReadCountsSource():
             elif len(dfi['src_end_pair_reads']) == 2:
                 sample_counts = dfi.sum()['src_end_pair_reads']
             else:
+                count = len(dfi['src_end_pair_reads'])
+                values = dfi['src_end_pair_reads'].values
+                msg = (f'{sample_name} end=R{read_number} '
+                       f'count={count} {values}')
                 raise ValueError(
-                    'Odd length of reads pairs.',
-                    len(dfi['src_end_pair_reads'])
+                    'Odd length of read pairs.',
+                    msg
                 )
             count_index[sample_name] = {'sample_counts': int(sample_counts)}
 
