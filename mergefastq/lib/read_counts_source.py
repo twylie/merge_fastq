@@ -9,7 +9,6 @@
 import argparse
 import pandas as pd  # type: ignore
 from pandas import DataFrame
-import numpy as np
 from typing_extensions import Self
 from pathlib import Path
 import hashlib
@@ -180,7 +179,8 @@ class ReadCountsSource():
                 self.merged_samplemap
             )
         else:
-            self.df_merged = pd.read_csv(self.merged_samplemap, sep='\t')
+            self.df_merged = pd.read_csv(self.merged_samplemap,
+                                         sep='\t', comment='#')
         return
 
     def __col_src_end_pair_reads(self: Self) -> None:
@@ -580,18 +580,17 @@ class ReadCountsSource():
         between the two tables will be highlighted in a subsequent
         comparison report file.
 
-         The comparison report file's fields will be blank if there are
-        differences between the read count tables. Differences will be
-        displayed as GTAC:SRC count pairs. The is_no_difference column
-        is a boolean field indicating if there are any differences
-        across the count fields for the sample.
+        The comparison report file's fields will be displayed as
+        GTAC:SRC count pairs. The is_no_difference column is a boolean
+        field indicating if there are any differences across the count
+        fields for the sample.
 
         REPORT FIELDS
         -------------
         1. sample_name        : STR
-        2  r1_read_counts     : STR | NaN
-        3. r2_read_counts     : STR | NaN
-        4. sample_read_counts : STR | NaN
+        2  r1_read_counts     : STR
+        3. r2_read_counts     : STR
+        4. sample_read_counts : STR
         5. is_no_difference   : BOOL
 
         Parameters
@@ -618,35 +617,22 @@ class ReadCountsSource():
         for i in df_eval.index:
             sample_name = df_gtac.loc[i]['sample_name']
             col_sample_names.append(sample_name)
-            is_r1_same = bool(df_eval.loc[i]['r1_read_counts'])
-            is_r2_same = bool(df_eval.loc[i]['r2_read_counts'])
-            is_sample_same = bool(df_eval.loc[i]['sample_read_counts'])
-            if is_r1_same is False:
-                gtac_counts = df_gtac.loc[i]['r1_read_counts']
-                src_counts = df_src.loc[i]['r1_read_counts']
-                r1_comp = f'{gtac_counts}:{src_counts}'
-                col_r1_read_counts.append(r1_comp)
-            elif is_r1_same is True:
-                col_r1_read_counts.append(np.nan)
-            if is_r2_same is False:
-                gtac_counts = df_gtac.loc[i]['r2_read_counts']
-                src_counts = df_src.loc[i]['r2_read_counts']
-                r2_comp = f'{gtac_counts}:{src_counts}'
-                col_r2_read_counts.append(r2_comp)
-            elif is_r2_same is True:
-                col_r2_read_counts.append(np.nan)
-            if is_sample_same is False:
-                gtac_counts = df_gtac.loc[i]['sample_read_counts']
-                src_counts = df_src.loc[i]['sample_read_counts']
-                r2_comp = f'{gtac_counts}:{src_counts}'
-                col_sample_read_counts.append(r2_comp)
-            elif is_r2_same is True:
-                col_sample_read_counts.append(np.nan)
-
+            gtac_counts = df_gtac.loc[i]['r1_read_counts']
+            src_counts = df_src.loc[i]['r1_read_counts']
+            r1_comp = f'{gtac_counts}:{src_counts}'
+            col_r1_read_counts.append(r1_comp)
+            gtac_counts = df_gtac.loc[i]['r2_read_counts']
+            src_counts = df_src.loc[i]['r2_read_counts']
+            r2_comp = f'{gtac_counts}:{src_counts}'
+            col_r2_read_counts.append(r2_comp)
+            gtac_counts = df_gtac.loc[i]['sample_read_counts']
+            src_counts = df_src.loc[i]['sample_read_counts']
+            r2_comp = f'{gtac_counts}:{src_counts}'
+            col_sample_read_counts.append(r2_comp)
         self.df_comp['sample_name'] = col_sample_names
-        self.df_comp['r1_read_counts'] = col_r1_read_counts
-        self.df_comp['r2_read_counts'] = col_r2_read_counts
-        self.df_comp['sample_read_counts'] = col_sample_read_counts
+        self.df_comp['r1_read_counts_gtac_src'] = col_r1_read_counts
+        self.df_comp['r2_read_counts_gtac_src'] = col_r2_read_counts
+        self.df_comp['sample_read_counts_gtac_src'] = col_sample_read_counts
 
         col_bool: list = list()
         for i in df_eval.index:

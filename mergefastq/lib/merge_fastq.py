@@ -14,6 +14,7 @@ from typing_extensions import Self
 from pathlib import Path
 import hashlib
 import gzip
+from datetime import datetime
 
 
 class MergeFastq:
@@ -812,6 +813,7 @@ class MergeFastq:
 
         Returns
         -------
+        str
             Returns a MD5 hash value for the supplied file.
         """
         with open(file_path, 'rb') as fh:
@@ -845,7 +847,11 @@ class MergeFastq:
         -------
         None
         """
-        self.samplemap_merged.to_csv(file_path, sep='\t', index=False)
+        header = self.__format_tsv_header(file_path=file_path)
+        with open(file_path, 'w') as fho:
+            fho.write(header)
+            self.samplemap_merged.to_csv(fho, sep='\t', index=False)
+            fho.write('# End file text.\n')
         md5 = self.__calc_file_md5(file_path=file_path)
         md5_path = file_path + '.MD5'
         with open(md5_path, 'w') as fh:
@@ -854,6 +860,108 @@ class MergeFastq:
         self.samplemap_merged.to_pickle(pickle)
         self.samplemap_merged_pkl = pickle
         return
+
+    def __format_tsv_header(self: Self, file_path) -> str:
+        """Format a header for the dataframe tsv file.
+
+        Parameters
+        ----------
+        file_path : str
+            A qualified file path to write the merged dataframe.
+
+        Raises
+        ------
+        None
+
+        Returns
+        -------
+        str
+            Returns the header information block as a formatted string.
+        """
+        file_path_name = Path(file_path).name
+        date = datetime.now().strftime("%a %d. %b %H:%M:%S %Z %Y")
+        from textwrap import dedent
+        project = self.args.project
+        header = dedent(f"""\
+        # Begin file text.
+        #
+        # Project     : {project}
+        # File Name   : {file_path_name}
+        # Description : A dataframe of merged FASTQ file sequencing
+        #               information based on Samplemap.csv files.
+        # Created     : {date}
+        #
+        # Fields
+        # ------
+        # fastq : STR
+        #     The name of the FASTQ file. Will be either R1 or R2 type.
+        #
+        # flow_cell_id : STR
+        #     Sequencing flow cell id from which the sample's FASTQ file was
+        #     derived.
+        #
+        # index_sequence : STR
+        #     Molecular barcode used to identify the sequenced sample.
+        #
+        # lane_number : INT
+        #     Flow cell lane in which the sample was sequenced.
+        #
+        # read_number : INT
+        #     Read-end, R1 or R2, for the sequenced read-pair.
+        #
+        # sample_name : STR
+        #     Original sample name as provided by the sequencing core.
+        #
+        # library_type : STR
+        #     Library type as provided by the sequencing core.
+        #
+        # total_bases : INT
+        #     Summed base count using both read-pairs in the sample, as
+        #     provided by the sequencing core.
+        #
+        # samplemap_path : STR
+        #     The Samplemap.csv file from which the sample was taken.
+        #
+        # gtac_fastq_reads : INT
+        #     Read count for the FASTQ file provided by the sequencing core.
+        #
+        # esp_id : STR
+        #     ESP ID is an auto-generated ID from the sequencing core's LIMS
+        #     system; each entity type has one.
+        #
+        # pool_name : STR
+        #     Sequencing pool identifier.
+        #
+        # batch_id : INT
+        #     The sequencing batch as determined by individual Samplemap.csv
+        #     files.
+        #
+        # fastq_path : STR
+        #     File path to the original, source FASTQ file used in merging.
+        #
+        # project : STR
+        #     The project name/tag associated with the FASTQ file.
+        #
+        # revised_sample_name : STR
+        #     A revised sample name used in merging and downstream analysis.
+        #
+        # merged_commands : STR
+        #     The shell commands used to create the associated merged
+        #     FASTQ file.
+        #
+        # merged_fastq_path : STR
+        #     File path to the merged FASTQ file.
+        #
+        # gtac_end_pair_reads : INT
+        #     Summed read count using all end-pairs in a FASTQ merge, as
+        #     provided by the sequencing core.
+        #
+        # gtac_sample_reads : INT
+        #     Summed read count using both read-pairs in the sample, as
+        #     provided by the sequencing core.
+        #
+        """)
+        return header
 
     def __update_df_read_counts(self: Self) -> None:
         """Update the GTAC supplied read counts in the dataframe.

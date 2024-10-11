@@ -129,7 +129,8 @@ class ReadCountsGtac:
                 self.merged_tsv
             )
         else:
-            self.df_merged = pd.read_csv(self.merged_tsv, sep='\t')
+            self.df_merged = pd.read_csv(self.merged_tsv, sep='\t',
+                                         comment='#')
         return
 
     def __set_target_coverages(self: Self) -> None:
