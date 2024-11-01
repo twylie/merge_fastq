@@ -315,12 +315,13 @@ class Samplemap:
             total_reads = df_i['Total Reads']
             esp_id = df_i['ESP ID']
             pool_name = df_i['Pool Name']
-            read_num_tag = re.search('_R[12]_', df_i['FASTQ'], re.IGNORECASE)
+            pattern = r'_R[12]_|_R[12].'
+            read_num_tag = re.search(pattern, df_i['FASTQ'], re.IGNORECASE)
             if read_num_tag is not None:
                 match read_num_tag.group():
-                    case '_R1_':
+                    case '_R1_' | '_R1.':
                         read_number = 1
-                    case '_R2_':
+                    case '_R2_' | '_R2.':
                         read_number = 2
                     case _:
                         raise ValueError(
