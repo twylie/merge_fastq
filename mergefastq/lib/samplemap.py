@@ -152,9 +152,6 @@ class Samplemap:
 
         Raises
         ------
-        ValueError
-            File name does not match Samplemap.csv format.
-
         TypeError
             Unknown samplemap format type encountered.
 
@@ -163,13 +160,6 @@ class Samplemap:
         smap_type : str
             A defined format type for a given Samplemap file.
         """
-        smap_file_name = Path(smap).stem + Path(smap).suffix
-        if smap_file_name != 'Samplemap.csv':
-            raise ValueError(
-                'File name does not match Samplemap.csv format.',
-                smap_file_name
-            )
-
         # The order of the columns is irrelevant as long as all fields
         # are present in the Samplemap.csv file.
 
