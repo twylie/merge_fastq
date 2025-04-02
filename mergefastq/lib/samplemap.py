@@ -546,7 +546,6 @@ class Samplemap:
             self.__parse_samplemap(i=i, smap=smap, smap_type=smap_type)
         self.__concatenate_samplemaps()
         self.__eval_cross_batch_sample_ids()
-        self.__eval_whitespace()
         return
 
     def __eval_origin_fastq(self: Self) -> None:

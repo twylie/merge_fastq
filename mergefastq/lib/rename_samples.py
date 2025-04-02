@@ -68,6 +68,7 @@ class RenameSamples:
         self.args = args
         self.df: DataFrame = DataFrame()
         self.__populate_df()
+        self.__eval_whitespace()
         return
 
     def __populate_df(self: Self) -> None:
@@ -147,6 +148,35 @@ class RenameSamples:
             sample_id_count = len(dfg.get_group(sample_id))
             if sample_id_count > 1:
                 raise ValueError('Samplemap to revised id is not one-to-one.')
+        return
+
+    def __eval_whitespace(self: Self) -> None:
+        """Evaluate if sample names contain whitespace.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        ValueError
+            No whitespace allowed in sample names. Fix Samplemap.csv
+            files.
+
+        Returns
+        -------
+        None
+        """
+        df = self.copy_df()
+        dfg = df.groupby('revised_sample_id')
+        sample_ids = set(dfg.groups.keys())
+        for sample_id in sample_ids:
+            if sample_id.find(r' ') >= 0:
+                raise ValueError(
+                    ('No whitespace allowed in sample names. Fix '
+                     'Samplemap.csv files.'),
+                    sample_id
+                )
         return
 
     def copy_df(self: Self) -> DataFrame:

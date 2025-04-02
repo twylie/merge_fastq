@@ -163,16 +163,6 @@ if __name__ == '__main__':
     df_smaps = pd.concat(dfs).reset_index(drop=True)
     sample_names = list(df_smaps['Library Name'].unique())
 
-    # No whitespace allowed in sample names.
-
-    for sample_name in sample_names:
-        if sample_name.find(r' ') >= 0:
-            raise ValueError(
-                ('No whitespace allowed in sample names. '
-                 'Fix Samplemap.csv files.'),
-                sample_name
-            )
-
     # Write the prepared rename file.
 
     header_row = '\t'.join(
