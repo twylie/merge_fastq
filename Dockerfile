@@ -57,6 +57,7 @@ RUN apt-get clean
 # Local Python Installations ##################################################
 
 COPY ./bin/prep_rename_file.py /usr/bin/prep_rename_file
+COPY ./bin/prep_samplemap_file.py /usr/bin/prep_samplemap_file
 COPY ./bin/merge_fastq.py /usr/bin/merge_fastq
 COPY ./bin/eval_fastq_counts.py /usr/bin/eval_fastq_counts
 COPY ./mergefastq /usr/lib/python3.10/mergefastq
