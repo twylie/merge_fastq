@@ -112,6 +112,12 @@ If the format of the `Samplemap.csv` file changes in the future, the `merge_fast
 > + Use `Samplemap.csv` files and not `Samplemap2.csv` files.
 > + Any `Samplemap.csv` file format that does not match the early 2024 version will break the code base.
 
+Of note, there should be no spaces in the original samplemap file's Library Name fields. If there are, you may convert them (to underscores) using the `prep_samplemap_file` script. Example:
+
+```plaintext
+prep_samplemap_file --samplemap <SMAP FILE> --out <SMAP OUT FILE>
+```
+
 ###  2. Prepare a Rename File
 
 It is not uncommon to need to rename the FASTQ files in a batch. GTAC@MGI often names the samples within the `Samplemap.csv` in a manner different than what may be desired for a sample's final, canonical name. Also, a sample may have been sent to sequencing with a name that later needs revision. For example, the following samples need conversion from the samplemap naming convention to a final, revised naming convention.
