@@ -480,7 +480,7 @@ merge_fastq
 
 # usage: merge_fastq [-h] [--version] [--lsf-image STR] [--lsf-group STR] [--lsf-queue STR]
 #         [--lsf-dry] [--no-lsf-dry] --samplemap FILE [FILE ...] --outdir DIR --rename FILE
-#         --lsf-vol PATH [PATH ...] --project {MIDAS,PLACENTA,PTLD}
+#         --lsf-vol PATH [PATH ...] --project {MIDAS,PLACENTA,PTLD,HVP1}
 # merge_fastq: error: the following arguments are required: --samplemap, --outdir, --rename,
 #                     --lsf-vol, --project
 ```
@@ -521,7 +521,7 @@ prep_rename_file \
 usage: merge_fastq [-h] [--version] [--lsf-image STR] [--lsf-group STR] [--lsf-queue STR]
        [--lsf-dry] [--no-lsf-dry] --samplemap FILE [FILE ...] --outdir DIR --rename FILE
        --lsf-vol PATH [PATH ...] --project
-                   {MIDAS,PLACENTA,PTLD}
+                   {MIDAS,PLACENTA,PTLD,HVP1}
 
 Merge FASTQ files at sample-level.
 
@@ -541,7 +541,7 @@ required:
   --rename FILE         Path to a sample rename file.
   --lsf-vol PATH [PATH ...]
                         Top-level Docker volume path(s) for WashU LSF processing.
-  --project {MIDAS,PLACENTA,PTLD}
+  --project {MIDAS,PLACENTA,PTLD,HVP1}
                         Project tag/name.
 ```
 

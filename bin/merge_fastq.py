@@ -145,7 +145,7 @@ def collect_cli_arguments(version: str) -> argparse.Namespace:
         nargs='+'
     )
 
-    project_tags = ('MIDAS', 'PLACENTA', 'PTLD')
+    project_tags = ('MIDAS', 'PLACENTA', 'PTLD', 'HVP1')
     required_group.add_argument(
         '--project',
         action='store',
@@ -196,7 +196,7 @@ def eval_cli_arguments(args: argparse.Namespace) -> None:
 # MAIN ########################################################################
 
 if __name__ == '__main__':
-    VERSION = '1.0.14'
+    VERSION = '1.0.15'
 
     if not sys.version_info >= (3, 10):
         raise OSError(
